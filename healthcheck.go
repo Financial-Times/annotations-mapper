@@ -71,7 +71,7 @@ func (h *Healthcheck) checkAggregateMessageQueueProxiesReachable() error {
 func (h *Healthcheck) checkMessageQueueProxyReachable(address string, topic string, authKey string, queue string) error {
 	req, err := http.NewRequest("GET", address+"/topics", nil)
 	if err != nil {
-		warnLogger.Printf("Could not connect to proxy: %v", err.Error())
+		logger.Warn("Could not connect to proxy", "", "", err)
 		return err
 	}
 
@@ -85,7 +85,7 @@ func (h *Healthcheck) checkMessageQueueProxyReachable(address string, topic stri
 
 	resp, err := h.client.Do(req)
 	if err != nil {
-		warnLogger.Printf("Could not connect to proxy: %v", err.Error())
+		logger.Warn("Could not connect to proxy", "", "", err)
 		return err
 	}
 	defer resp.Body.Close()

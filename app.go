@@ -20,27 +20,34 @@ import (
 	status "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-	"github.com/kr/pretty"
 	"github.com/twinj/uuid"
 )
 
-var messageProducer producer.MessageProducer
-
-var taxonomyHandlers = map[string]TaxonomyService{
-	"subjects":         SubjectService{HandledTaxonomy: "subjects"},
-	"sections":         SectionService{HandledTaxonomy: "sections"},
-	"topics":           TopicService{HandledTaxonomy: "topics"},
-	"locations":        LocationService{HandledTaxonomy: "gl"},
-	"genres":           GenreService{HandledTaxonomy: "genres"},
-	"specialReports":   SpecialReportService{HandledTaxonomy: "specialReports"},
-	"alphavilleSeries": AlphavilleSeriesService{HandledTaxonomy: "alphavilleSeriesClassification"},
-	"organisations":    OrganisationService{HandledTaxonomy: "ON"},
-	"people":           PeopleService{HandledTaxonomy: "PN"},
-	"authors":          AuthorService{HandledTaxonomy: "Authors"},
-	"brands":           BrandService{HandledTaxonomy: "Brands"},
-}
-
 const messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
+
+var (
+	messageConsumer  consumer.MessageConsumer
+	messageProducer  producer.MessageProducer
+	logger           *AppLogger
+	taxonomyHandlers map[string]TaxonomyService
+)
+
+func init() {
+	logger = NewAppLogger()
+	taxonomyHandlers = map[string]TaxonomyService{
+		"subjects":         SubjectService{HandledTaxonomy: "subjects"},
+		"sections":         SectionService{HandledTaxonomy: "sections"},
+		"topics":           TopicService{HandledTaxonomy: "topics"},
+		"locations":        LocationService{HandledTaxonomy: "gl"},
+		"genres":           GenreService{HandledTaxonomy: "genres"},
+		"specialReports":   SpecialReportService{HandledTaxonomy: "specialReports"},
+		"alphavilleSeries": AlphavilleSeriesService{HandledTaxonomy: "alphavilleSeriesClassification"},
+		"organisations":    OrganisationService{HandledTaxonomy: "ON"},
+		"people":           PeopleService{HandledTaxonomy: "PN"},
+		"authors":          AuthorService{HandledTaxonomy: "Authors"},
+		"brands":           BrandService{HandledTaxonomy: "Brands"},
+	}
+}
 
 func main() {
 	app := cli.App("annotations-mapper", "A service to read V1 metadata publish event, filter it and output UP-specific metadata to the destination queue.")
@@ -108,19 +115,15 @@ func main() {
 			Queue: *destinationQueue,
 		}
 
-		initLogs(os.Stdout, os.Stdout, os.Stderr)
-		infoLogger.Printf("[Startup] Using source configuration: %# v", pretty.Formatter(srcConf))
-		infoLogger.Printf("[Startup] Using dest configuration: %# v", pretty.Formatter(destConf))
-
-		infoLogger.Printf("[Startup] Handling taxonomies:")
-		for key := range taxonomyHandlers {
-			infoLogger.Printf("\t %v", key)
-		}
-
 		go enableHealthChecks(srcConf, destConf)
 
-		initializeProducer(destConf)
-		readMessages(srcConf)
+		messageConsumer = consumer.NewConsumer(srcConf, handleMessage, http.DefaultClient)
+		logger.QueueConsumerStarted(srcConf.Topic)
+
+		messageProducer = producer.NewMessageProducer(destConf)
+		logger.QueueProducerStarted(*destinationTopic)
+
+		readMessages(messageConsumer)
 	}
 
 	app.Run(os.Args)
@@ -141,19 +144,13 @@ func enableHealthChecks(srcConf consumer.QueueConfig, destConf producer.MessageP
 	http.Handle("/", router)
 	err := http.ListenAndServe(":8081", nil)
 	if err != nil {
-		errorLogger.Panicf("Couldn't set up HTTP listener: %v\n", err)
+		msg := "Couldn't set up HTTP listener"
+		logger.Error(msg+": %v\n", "", "", err)
+		panic(msg)
 	}
 }
 
-func initializeProducer(config producer.MessageProducerConfig) {
-	messageProducer = producer.NewMessageProducer(config)
-	infoLogger.Printf("[Startup] Producer: %# v", pretty.Formatter(messageProducer))
-}
-
-func readMessages(config consumer.QueueConfig) {
-	messageConsumer := consumer.NewConsumer(config, handleMessage, &http.Client{})
-	infoLogger.Printf("[Startup] Consumer: %# v", pretty.Formatter(messageConsumer))
-
+func readMessages(messageConsumer consumer.MessageConsumer) {
 	var consumerWaitGroup sync.WaitGroup
 	consumerWaitGroup.Add(1)
 
@@ -175,31 +172,30 @@ func handleMessage(msg consumer.Message) {
 	var metadataPublishEvent MetadataPublishEvent
 	err := json.Unmarshal([]byte(msg.Body), &metadataPublishEvent)
 	if err != nil {
-		errorLogger.Printf("[%s] Cannot unmarshal message body:[%v]", tid, err.Error())
+		logger.Error("Cannot unmarshal message body", tid, "", err)
 		return
 	}
 
-	infoLogger.Printf("[%s] Processing metadata publish event for uuid [%s]", tid, metadataPublishEvent.UUID)
+	logger.Info("Processing metadata publish event", tid, metadataPublishEvent.UUID)
 
 	metadataXML, err := base64.StdEncoding.DecodeString(metadataPublishEvent.Value)
 	if err != nil {
-		errorLogger.Printf("[%s] Error decoding body for uuid:  [%s]", tid, err.Error())
+		logger.Error("Error decoding body", tid, metadataPublishEvent.UUID, err)
 		return
 	}
 
 	metadata, err, hadInvalidChars := unmarshalMetadata(metadataXML)
 
 	if err != nil {
-		errorLogger.Printf("[%s] Error unmarshalling metadata XML for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
+		logger.Error("Error unmarshalling metadata XML", tid, metadataPublishEvent.UUID, err)
 		if hadInvalidChars {
-			infoLogger.Printf("[%s] Metadata XML for UUID [%s] had invalid UTF8 characters.", tid, metadataPublishEvent.UUID)
+			logger.Info("Metadata XML had invalid UTF8 characters.", tid, metadataPublishEvent.UUID)
 		}
 		return
 	}
 
 	annotations := []annotation{}
-	for key, value := range taxonomyHandlers {
-		infoLogger.Printf("[%s] Processing taxonomy [%s]", tid, key)
+	for _, value := range taxonomyHandlers {
 		annotations = append(annotations, value.buildAnnotations(metadata)...)
 	}
 
@@ -207,7 +203,7 @@ func handleMessage(msg consumer.Message) {
 
 	marshalledAnnotations, err := json.Marshal(conceptAnnotations)
 	if err != nil {
-		errorLogger.Printf("[%s] Error marshalling the concept annotations for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
+		logger.Error("Error marshalling the concept annotations", tid, metadataPublishEvent.UUID, err)
 		return
 	}
 
@@ -215,10 +211,9 @@ func handleMessage(msg consumer.Message) {
 	message := producer.Message{Headers: headers, Body: string(marshalledAnnotations)}
 	err = messageProducer.SendMessage(conceptAnnotations.UUID, message)
 	if err != nil {
-		errorLogger.Printf("[%s] Error sending concept annotation to queue for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
+		logger.Error("Error sending concept annotation to queue", tid, metadataPublishEvent.UUID, err)
 	}
-
-	infoLogger.Printf("[%s] Sent annotation message for [%s] with message ID [%s] to queue.", tid, metadataPublishEvent.UUID, headers["Message-Id"])
+	logger.Info("Sent annotation message to queue", tid, metadataPublishEvent.UUID)
 }
 
 func unmarshalMetadata(metadataXML []byte) (ContentRef, error, bool) {
