@@ -1,18 +1,18 @@
-[![Circle CI](https://circleci.com/gh/Financial-Times/v1-suggestor.svg?style=shield)](https://circleci.com/gh/Financial-Times/v1-suggestor)[![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/v1-suggestor)](https://goreportcard.com/report/github.com/Financial-Times/v1-suggestor) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/v1-suggestor/badge.svg)](https://coveralls.io/github/Financial-Times/v1-suggestor)
+[![Circle CI](https://circleci.com/gh/Financial-Times/annotations-mapper.svg?style=shield)](https://circleci.com/gh/Financial-Times/annotations-mapper)[![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/annotations-mapper)](https://goreportcard.com/report/github.com/Financial-Times/annotations-mapper) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/annotations-mapper/badge.svg)](https://coveralls.io/github/Financial-Times/annotations-mapper)
 
-# V1 suggestor
+# annotations-mapper
 Processes metadata about content that comes from QMI system - aka V1 annotations.  
 
 * Reads V1 metadata for an article from the  kafka source topic _NativeCmsMetadataPublicationEvents_
 * Filters and transforms it to UP standard json representation
-* Puts the result onto the kafka destination topic _ConceptSuggestions_
+* Puts the result onto the kafka destination topic _V1ConceptAnnotations_
 
-v1-suggestor service communicates with kafka via http-rest-proxy. It polls kafka-rest-proxy for messages and POSTs transformed messages to kafka-rest-proxy.  
+annotations-mapper service communicates with kafka via http-rest-proxy. It polls kafka-rest-proxy for messages and POSTs transformed messages to kafka-rest-proxy.  
 This service is deployed in the Delivery clusters.
 ## Installation
 
-* `go get -u github.com/Financial-Times/v1-suggestor`
-* `cd $GOPATH/src/github.com/Financial-Times/v1-suggestor`
+* `go get -u github.com/Financial-Times/annotations-mapper`
+* `cd $GOPATH/src/github.com/Financial-Times/annotations-mapper`
 * `go install`
 
 ## Startup parameters
@@ -30,7 +30,7 @@ This service is deployed in the Delivery clusters.
 
 
 ## Prerequisites
-In order to run v1-suggestor you would need at least kafka/zookeeper and kafka-rest-proxy to be accessible somewhere
+In order to run annotations-mapper you would need at least kafka/zookeeper and kafka-rest-proxy to be accessible somewhere
 and you would need to provide the host and the port to connect to them as startup parameters.
 
 ## Run locally
@@ -48,22 +48,22 @@ and you would need to provide the host and the port to connect to them as startu
 ````
 
 ````
-./v1-suggestor[.exe]
+./annotations-mapper[.exe]
 ````
 
 ## Build in Docker
 ````
-git config remote.origin.url https://github.com/Financial-Times/v1-suggestor.git
-docker build -t coco/v1-suggestor:$DOCKER_APP_VERSION .
-git config remote.origin.url git@github.com:Financial-Times/v1-suggestor.git
+git config remote.origin.url https://github.com/Financial-Times/annotations-mapper.git
+docker build -t coco/annotations-mapper:$DOCKER_APP_VERSION .
+git config remote.origin.url git@github.com:Financial-Times/annotations-mapper.git
 ````
 
 # #Run in Docker
 ````
 
-docker run --name v1-suggestor -p 8080 \
+docker run --name annotations-mapper -p 8080 \
 --env "SRC_ADDR=http://kafka:8080" \
-	--env "SRC_GROUP=v1Suggestor" \
+	--env "SRC_GROUP=annotations-mapper" \
 	--env "SRC_TOPIC=NativeCmsMetadataPublicationEvents" \
 	--env "SRC_QUEUE=kafka" \
 	--env "SRC_CONCURRENT_PROCESSING=false" \
@@ -71,14 +71,14 @@ docker run --name v1-suggestor -p 8080 \
 	--env "DEST_TOPIC=ConceptSuggestions" \
 	--env "DEST_QUEUE=kafka" \
 	--env "ENVIRONMENT=coco-$ENVIRONMENT_TAG" \
-	coco/v1-suggestor:$DOCKER_APP_VERSION
+	coco/annotations-mapper:$DOCKER_APP_VERSION
 ````
  
 ## Admin Endpoints
 
 |===Endpoint ===    | Explained |
 |---|---|
-| /__health      | checks that v1-suggestor can communicate to kafka via http-rest-proxy|
+| /__health      | checks that annotations-mapper can communicate to kafka via http-rest-proxy|
 |/__ping         | _response status_: **200**  _body_:**"pong"** |
 |/ping           | the same as above for compatibility with Dropwizard java apps |
 |/__gtg          | _response status_: **200** when "good to go" or **503** when not "good to go"|
@@ -162,8 +162,4 @@ X-Request-Id: tid_9rvfuynl4b
 	<ns7:reference ns1:cmrId="1227570" ns1:externalId="980913e6-cdd6-11e6-864f-20dcb35cede2" ns1:externalSource="METHODE"/>  
 </ns5:externalReferences>  
 </ns5:contentRef>  
-
-
-Note: Brigthcove video metadata is the same pipeline as metadata for Methode  articles and Wordpress blogs, so brands are added in the same way.
-
 ````

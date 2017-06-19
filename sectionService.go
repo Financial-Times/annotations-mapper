@@ -1,20 +1,20 @@
 package main
 
-// SectionService extracts and transforms the section taxonomy into a suggestion
+// SectionService extracts and transforms the section taxonomy into an annotation
 type SectionService struct {
 	HandledTaxonomy string
 }
 
 const sectionURI = "http://www.ft.com/ontology/Section"
 
-// BuildSuggestions builds a list of section suggestions from a ContentRef.
+// BuildAnnotations builds a list of section annotations from a ContentRef.
 // Returns an empty array in case no section annotations are found
-func (sectionService SectionService) buildSuggestions(contentRef ContentRef) []suggestion {
+func (sectionService SectionService) buildAnnotations(contentRef ContentRef) []annotation {
 	sections := extractTags(sectionService.HandledTaxonomy, contentRef)
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 
 	for _, value := range sections {
-		suggestions = append(suggestions, buildSuggestion(value, sectionURI, classification))
+		annotations = append(annotations, buildAnnotation(value, sectionURI, classification))
 	}
 
 	if contentRef.PrimarySection.CanonicalName != "" {
@@ -24,8 +24,8 @@ func (sectionService SectionService) buildSuggestions(contentRef ContentRef) []s
 			Predicate: primaryClassification,
 			Types:     []string{sectionURI},
 		}
-		suggestions = append(suggestions, suggestion{Thing: thing})
+		annotations = append(annotations, annotation{Thing: thing})
 	}
 
-	return suggestions
+	return annotations
 }

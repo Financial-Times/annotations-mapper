@@ -1,20 +1,20 @@
 package main
 
-// SpecialReportService extracts and transforms the special report taxonomy into a suggestion
+// SpecialReportService extracts and transforms the special report taxonomy into an annotation
 type SpecialReportService struct {
 	HandledTaxonomy string
 }
 
 const specialReportURI = "http://www.ft.com/ontology/SpecialReport"
 
-// BuildSuggestions builds a list of specialReport suggestions from a ContentRef.
+// BuildAnnotations builds a list of specialReport annotations from a ContentRef.
 // Returns an empty array in case no specialReport annotations are found
-func (specialReportService SpecialReportService) buildSuggestions(contentRef ContentRef) []suggestion {
+func (specialReportService SpecialReportService) buildAnnotations(contentRef ContentRef) []annotation {
 	specialReports := extractTags(specialReportService.HandledTaxonomy, contentRef)
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 
 	for _, value := range specialReports {
-		suggestions = append(suggestions, buildSuggestion(value, specialReportURI, classification))
+		annotations = append(annotations, buildAnnotation(value, specialReportURI, classification))
 	}
 
 	if contentRef.PrimarySection.CanonicalName != "" {
@@ -24,8 +24,8 @@ func (specialReportService SpecialReportService) buildSuggestions(contentRef Con
 			Predicate: primaryClassification,
 			Types:     []string{specialReportURI},
 		}
-		suggestions = append(suggestions, suggestion{Thing: thing})
+		annotations = append(annotations, annotation{Thing: thing})
 	}
 
-	return suggestions
+	return annotations
 }

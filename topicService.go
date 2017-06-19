@@ -1,20 +1,20 @@
 package main
 
-// TopicService extracts and transforms the topic taxonomy into a suggestion
+// TopicService extracts and transforms the topic taxonomy into an annotation
 type TopicService struct {
 	HandledTaxonomy string
 }
 
 const topicURI = "http://www.ft.com/ontology/Topic"
 
-// BuildSuggestions builds a list of topic suggestions from a ContentRef.
+// BuildAnnotations builds a list of topic annotations from a ContentRef.
 // Returns an empty array in case no topic annotations are found
-func (topicService TopicService) buildSuggestions(contentRef ContentRef) []suggestion {
+func (topicService TopicService) buildAnnotations(contentRef ContentRef) []annotation {
 	topics := extractTags(topicService.HandledTaxonomy, contentRef)
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 
 	for _, value := range topics {
-		suggestions = append(suggestions, buildSuggestion(value, topicURI, conceptMajorMentions))
+		annotations = append(annotations, buildAnnotation(value, topicURI, conceptMajorMentions))
 	}
 
 	if contentRef.PrimaryTheme.CanonicalName != "" {
@@ -24,8 +24,8 @@ func (topicService TopicService) buildSuggestions(contentRef ContentRef) []sugge
 			Predicate: about,
 			Types:     []string{topicURI},
 		}
-		suggestions = append(suggestions, suggestion{Thing: thing})
+		annotations = append(annotations, annotation{Thing: thing})
 	}
 
-	return suggestions
+	return annotations
 }

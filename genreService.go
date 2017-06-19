@@ -1,21 +1,21 @@
 package main
 
-// GenreService extracts and transforms the genre taxonomy into a suggestion
+// GenreService extracts and transforms the genre taxonomy into an annotation
 type GenreService struct {
 	HandledTaxonomy string
 }
 
 const genreURI = "http://www.ft.com/ontology/Genre"
 
-// BuildSuggestions builds a list of genre suggestions from a ContentRef.
+// BuildAnnotations builds a list of genre annotations from a ContentRef.
 // Returns an empty array in case no genre annotations are found
-func (genreService GenreService) buildSuggestions(contentRef ContentRef) []suggestion {
+func (genreService GenreService) buildAnnotations(contentRef ContentRef) []annotation {
 	genres := extractTags(genreService.HandledTaxonomy, contentRef)
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 
 	for _, value := range genres {
-		suggestions = append(suggestions, buildSuggestion(value, genreURI, classification))
+		annotations = append(annotations, buildAnnotation(value, genreURI, classification))
 	}
 
-	return suggestions
+	return annotations
 }

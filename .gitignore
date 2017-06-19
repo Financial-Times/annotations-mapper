@@ -1,4 +1,5 @@
 .idea/
-v1-suggestor.exe
+annotations-mapper.exe
 /.project
-v1-suggestor
+annotations-mapper
+.vscode/

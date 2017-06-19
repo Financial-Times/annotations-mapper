@@ -17,20 +17,33 @@ import (
 
 	"github.com/Financial-Times/message-queue-go-producer/producer"
 	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	status "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/kr/pretty"
 	"github.com/twinj/uuid"
-	status "github.com/Financial-Times/service-status-go/httphandlers"
 )
 
 var messageProducer producer.MessageProducer
-var taxonomyHandlers = make(map[string]TaxonomyService)
+
+var taxonomyHandlers = map[string]TaxonomyService{
+	"subjects":         SubjectService{HandledTaxonomy: "subjects"},
+	"sections":         SectionService{HandledTaxonomy: "sections"},
+	"topics":           TopicService{HandledTaxonomy: "topics"},
+	"locations":        LocationService{HandledTaxonomy: "gl"},
+	"genres":           GenreService{HandledTaxonomy: "genres"},
+	"specialReports":   SpecialReportService{HandledTaxonomy: "specialReports"},
+	"alphavilleSeries": AlphavilleSeriesService{HandledTaxonomy: "alphavilleSeriesClassification"},
+	"organisations":    OrganisationService{HandledTaxonomy: "ON"},
+	"people":           PeopleService{HandledTaxonomy: "PN"},
+	"authors":          AuthorService{HandledTaxonomy: "Authors"},
+	"brands":           BrandService{HandledTaxonomy: "Brands"},
+}
 
 const messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
 
 func main() {
-	app := cli.App("V1 suggestor", "A service to read V1 metadata publish event, filter it and output UP-specific metadata to the destination queue.")
+	app := cli.App("annotations-mapper", "A service to read V1 metadata publish event, filter it and output UP-specific metadata to the destination queue.")
 	sourceAddresses := app.Strings(cli.StringsOpt{
 		Name:   "source-addresses",
 		Value:  []string{},
@@ -70,7 +83,7 @@ func main() {
 	destinationTopic := app.String(cli.StringOpt{
 		Name:   "destination-topic",
 		Value:  "",
-		Desc:   "The topic to write the concept suggestion to",
+		Desc:   "The topic to write the concept annotation to",
 		EnvVar: "DEST_TOPIC",
 	})
 	destinationQueue := app.String(cli.StringOpt{
@@ -99,8 +112,6 @@ func main() {
 		infoLogger.Printf("[Startup] Using source configuration: %# v", pretty.Formatter(srcConf))
 		infoLogger.Printf("[Startup] Using dest configuration: %# v", pretty.Formatter(destConf))
 
-		setupTaxonomyHandlers()
-
 		infoLogger.Printf("[Startup] Handling taxonomies:")
 		for key := range taxonomyHandlers {
 			infoLogger.Printf("\t %v", key)
@@ -113,20 +124,6 @@ func main() {
 	}
 
 	app.Run(os.Args)
-}
-
-func setupTaxonomyHandlers() {
-	taxonomyHandlers["subjects"] = SubjectService{HandledTaxonomy: "subjects"}
-	taxonomyHandlers["sections"] = SectionService{HandledTaxonomy: "sections"}
-	taxonomyHandlers["topics"] = TopicService{HandledTaxonomy: "topics"}
-	taxonomyHandlers["locations"] = LocationService{HandledTaxonomy: "gl"}
-	taxonomyHandlers["genres"] = GenreService{HandledTaxonomy: "genres"}
-	taxonomyHandlers["specialReports"] = SpecialReportService{HandledTaxonomy: "specialReports"}
-	taxonomyHandlers["alphavilleSeries"] = AlphavilleSeriesService{HandledTaxonomy: "alphavilleSeriesClassification"}
-	taxonomyHandlers["organisations"] = OrganisationService{HandledTaxonomy: "ON"}
-	taxonomyHandlers["people"] = PeopleService{HandledTaxonomy: "PN"}
-	taxonomyHandlers["authors"] = AuthorService{HandledTaxonomy: "Authors"}
-	taxonomyHandlers["brands"] = BrandService{HandledTaxonomy: "Brands"}
 }
 
 func enableHealthChecks(srcConf consumer.QueueConfig, destConf producer.MessageProducerConfig) {
@@ -142,7 +139,7 @@ func enableHealthChecks(srcConf consumer.QueueConfig, destConf producer.MessageP
 	router.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
 	router.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
 	http.Handle("/", router)
-	err := http.ListenAndServe(":8080", nil)
+	err := http.ListenAndServe(":8081", nil)
 	if err != nil {
 		errorLogger.Panicf("Couldn't set up HTTP listener: %v\n", err)
 	}
@@ -200,28 +197,28 @@ func handleMessage(msg consumer.Message) {
 		return
 	}
 
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 	for key, value := range taxonomyHandlers {
 		infoLogger.Printf("[%s] Processing taxonomy [%s]", tid, key)
-		suggestions = append(suggestions, value.buildSuggestions(metadata)...)
+		annotations = append(annotations, value.buildAnnotations(metadata)...)
 	}
 
-	conceptSuggestion := ConceptSuggestion{UUID: metadataPublishEvent.UUID, Suggestions: suggestions}
+	conceptAnnotations := ConceptAnnotations{UUID: metadataPublishEvent.UUID, Annotations: annotations}
 
-	marshalledSuggestions, err := json.Marshal(conceptSuggestion)
+	marshalledAnnotations, err := json.Marshal(conceptAnnotations)
 	if err != nil {
-		errorLogger.Printf("[%s] Error marshalling the concept suggestions for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
+		errorLogger.Printf("[%s] Error marshalling the concept annotations for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
 		return
 	}
 
-	var headers = buildConceptSuggestionsHeader(msg.Headers)
-	message := producer.Message{Headers: headers, Body: string(marshalledSuggestions)}
-	err = messageProducer.SendMessage(conceptSuggestion.UUID, message)
+	var headers = buildConceptAnnotationsHeader(msg.Headers)
+	message := producer.Message{Headers: headers, Body: string(marshalledAnnotations)}
+	err = messageProducer.SendMessage(conceptAnnotations.UUID, message)
 	if err != nil {
-		errorLogger.Printf("[%s] Error sending concept suggestion to queue for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
+		errorLogger.Printf("[%s] Error sending concept annotation to queue for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
 	}
 
-	infoLogger.Printf("[%s] Sent suggestion message for [%s] with message ID [%s] to queue.", tid, metadataPublishEvent.UUID, headers["Message-Id"])
+	infoLogger.Printf("[%s] Sent annotation message for [%s] with message ID [%s] to queue.", tid, metadataPublishEvent.UUID, headers["Message-Id"])
 }
 
 func unmarshalMetadata(metadataXML []byte) (ContentRef, error, bool) {
@@ -233,10 +230,10 @@ func unmarshalMetadata(metadataXML []byte) (ContentRef, error, bool) {
 	return metadata, err, !utf8.Valid(metadataXML)
 }
 
-func buildConceptSuggestionsHeader(publishEventHeaders map[string]string) map[string]string {
+func buildConceptAnnotationsHeader(publishEventHeaders map[string]string) map[string]string {
 	return map[string]string{
 		"Message-Id":        uuid.NewV4().String(),
-		"Message-Type":      "concept-suggestions",
+		"Message-Type":      "concept-annotation",
 		"Content-Type":      publishEventHeaders["Content-Type"],
 		"X-Request-Id":      publishEventHeaders["X-Request-Id"],
 		"Origin-System-Id":  publishEventHeaders["Origin-System-Id"],
