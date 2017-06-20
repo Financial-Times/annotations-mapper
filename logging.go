@@ -90,3 +90,12 @@ func (appLogger *AppLogger) Error(message string, transactionID string, contentU
 
 	appLogger.Log.WithFields(event).Error(message)
 }
+
+func (appLogger *AppLogger) Fatal(message string, err error) {
+	event := map[string]interface{}{
+		"event": errorEvent,
+		"error": err,
+	}
+
+	appLogger.Log.WithFields(event).Fatal(message)
+}
