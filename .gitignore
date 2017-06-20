@@ -3,3 +3,4 @@ annotations-mapper.exe
 /.project
 annotations-mapper
 .vscode/
+vendor/*/
