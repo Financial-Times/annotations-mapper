@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	uuidutils "github.com/Financial-Times/uuid-utils-go"
 	"github.com/stretchr/testify/assert"
 	"strings"
 )
@@ -653,7 +654,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 		if strings.EqualFold("subjects", key) {
 			for i := 0; i < count; i++ {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(subjectTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(subjectTMEIDs[i]).String(),
 					PrefLabel: subjectNames[i],
 					Predicate: classification,
 					Types:     []string{subjectURI},
@@ -665,7 +666,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 		if strings.EqualFold("sections", key) {
 			for i := 0; i < count; i++ {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(sectionTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(sectionTMEIDs[i]).String(),
 					PrefLabel: sectionNames[i],
 					Predicate: classification,
 					Types:     []string{sectionURI},
@@ -676,7 +677,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 
 			if count > 0 && hasPrimarySection {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(sectionTMEIDs[0])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(sectionTMEIDs[0]).String(),
 					PrefLabel: sectionNames[0],
 					Predicate: primaryClassification,
 					Types:     []string{sectionURI},
@@ -688,7 +689,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 		if strings.EqualFold("topics", key) {
 			for i := 0; i < count; i++ {
 				oneThing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(topicTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(topicTMEIDs[i]).String(),
 					PrefLabel: topicNames[i],
 					Predicate: conceptMajorMentions,
 					Types:     []string{topicURI},
@@ -699,7 +700,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 			}
 			if count > 0 && hasPrimaryTheme {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(topicTMEIDs[0])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(topicTMEIDs[0]).String(),
 					PrefLabel: topicNames[0],
 					Predicate: about,
 					Types:     []string{topicURI},
@@ -711,7 +712,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 		if strings.EqualFold("locations", key) {
 			for i := 0; i < count; i++ {
 				oneThing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(locationTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(locationTMEIDs[i]).String(),
 					PrefLabel: locationNames[i],
 					Predicate: conceptMajorMentions,
 					Types:     []string{locationURI},
@@ -722,7 +723,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 			}
 			if count > 0 && hasPrimaryTheme {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(locationTMEIDs[0])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(locationTMEIDs[0]).String(),
 					PrefLabel: locationNames[0],
 					Predicate: about,
 					Types:     []string{locationURI},
@@ -734,7 +735,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 		if strings.EqualFold("genres", key) {
 			for i := 0; i < count; i++ {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(genreTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(genreTMEIDs[i]).String(),
 					PrefLabel: genreNames[i],
 					Predicate: classification,
 					Types:     []string{genreURI},
@@ -746,7 +747,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 		if strings.EqualFold("brands", key) {
 			for i := 0; i < count; i++ {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(brandTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(brandTMEIDs[i]).String(),
 					PrefLabel: brandNames[i],
 					Predicate: classification,
 					Types:     []string{brandURI},
@@ -758,7 +759,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 		if strings.EqualFold("specialReports", key) {
 			for i := 0; i < count; i++ {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(specialReportTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(specialReportTMEIDs[i]).String(),
 					PrefLabel: specialReportNames[i],
 					Predicate: classification,
 					Types:     []string{specialReportURI},
@@ -769,7 +770,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 
 			if count > 0 && hasPrimarySection {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(specialReportTMEIDs[0])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(specialReportTMEIDs[0]).String(),
 					PrefLabel: specialReportNames[0],
 					Predicate: primaryClassification,
 					Types:     []string{specialReportURI},
@@ -781,7 +782,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 		if strings.EqualFold("alphavilleSeries", key) {
 			for i := 0; i < count; i++ {
 				oneThing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(alphavilleSeriesTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(alphavilleSeriesTMEIDs[i]).String(),
 					PrefLabel: alphavilleSeriesNames[i],
 					Predicate: classification,
 					Types:     []string{alphavilleSeriesURI},
@@ -795,7 +796,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 
 			for i := 0; i < count; i++ {
 				oneThing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(organisationTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(organisationTMEIDs[i]).String(),
 					PrefLabel: organisationNames[i],
 					Predicate: conceptMajorMentions,
 					Types:     []string{organisationURI},
@@ -807,7 +808,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 			}
 			if count > 0 && hasPrimaryTheme {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(organisationTMEIDs[0])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(organisationTMEIDs[0]).String(),
 					PrefLabel: organisationNames[0],
 					Predicate: about,
 					Types:     []string{organisationURI},
@@ -821,7 +822,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 
 			for i := 0; i < count; i++ {
 				oneThing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(peopleTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(peopleTMEIDs[i]).String(),
 					PrefLabel: peopleNames[i],
 					Predicate: conceptMajorMentions,
 					Types:     []string{personURI},
@@ -833,7 +834,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 
 			if count > 0 && hasPrimaryTheme {
 				thing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(peopleTMEIDs[0])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(peopleTMEIDs[0]).String(),
 					PrefLabel: peopleNames[0],
 					Predicate: about,
 					Types:     []string{personURI},
@@ -845,7 +846,7 @@ func buildConceptAnnotations(taxonomyAndCount map[string]int, hasPrimarySection 
 		if strings.EqualFold("author", key) {
 			for i := 0; i < count; i++ {
 				oneThing := thing{
-					ID:        "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(authorTMEIDs[i])).String(),
+					ID:        "http://api.ft.com/things/" + uuidutils.NewV3UUID(authorTMEIDs[i]).String(),
 					PrefLabel: authorNames[i],
 					Predicate: hasAuthor,
 					Types:     []string{authorURI},

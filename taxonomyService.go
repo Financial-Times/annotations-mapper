@@ -1,6 +1,7 @@
 package main
 
 import (
+	uuidutils "github.com/Financial-Times/uuid-utils-go"
 	"strings"
 )
 
@@ -26,7 +27,7 @@ func transformScore(score int) float32 {
 }
 
 func generateID(cmrTermID string) string {
-	return "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(cmrTermID)).String()
+	return "http://api.ft.com/things/" + uuidutils.NewV3UUID(cmrTermID).String()
 }
 
 func extractTags(wantedTagName string, contentRef ContentRef) []tag {
