@@ -11,9 +11,13 @@ annotations-mapper service communicates with kafka via http-rest-proxy. It polls
 This service is deployed in the Delivery clusters.
 ## Installation
 
-* `go get -u github.com/Financial-Times/annotations-mapper`
-* `cd $GOPATH/src/github.com/Financial-Times/annotations-mapper`
-* `go install`
+```
+go get -u github.com/kardianos/govendor
+go get -u github.com/Financial-Times/v1-suggestor
+cd $GOPATH/src/github.com/Financial-Times/v1-suggestor
+govendor sync
+go build .
+```
 
 ## Startup parameters
 

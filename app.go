@@ -1,21 +1,18 @@
 package main
 
 import (
-	"os"
-
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
-
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
-
 	"unicode/utf8"
 
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	"github.com/jawher/mow.cli"
 	"github.com/twinj/uuid"
-	"os/signal"
-	"syscall"
 )
 
 const messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
@@ -52,44 +49,40 @@ func main() {
 		Desc:   "Addresses used by the queue consumer to connect to the queue",
 		EnvVar: "ZOOKEEPER_ADDRESS",
 	})
-	sourceGroup := app.String(cli.StringOpt{
-		Name:   "source-group",
-		Value:  "",
+	consumerGroup := app.String(cli.StringOpt{
+		Name:   "consumerGroup",
 		Desc:   "Group used to read the messages from the queue",
-		EnvVar: "SRC_GROUP",
+		EnvVar: "CONSUMER_GROUP",
 	})
-	sourceTopic := app.String(cli.StringOpt{
-		Name:   "source-topic",
-		Value:  "",
+	consumerTopic := app.String(cli.StringOpt{
+		Name:   "consumerTopic",
 		Desc:   "The topic to read the meassages from",
-		EnvVar: "SRC_TOPIC",
+		EnvVar: "CONSUMER_TOPIC",
 	})
-	destinationAddress := app.String(cli.StringOpt{
-		Name:   "destination-address",
-		Value:  "",
+	brokerAddress := app.String(cli.StringOpt{
+		Name:   "brokerAddress",
 		Desc:   "Address used by the producer to connect to the queue",
-		EnvVar: "DEST_ADDRESS",
+		EnvVar: "BROKER_ADDRESS",
 	})
-	destinationTopic := app.String(cli.StringOpt{
-		Name:   "destination-topic",
-		Value:  "",
+	producerTopic := app.String(cli.StringOpt{
+		Name:   "producerTopic",
 		Desc:   "The topic to write the concept annotation to",
-		EnvVar: "DEST_TOPIC",
+		EnvVar: "PRODUCER_TOPIC",
 	})
 
 	app.Action = func() {
 		var err error
-		messageProducer, err = kafka.NewProducer(*destinationAddress, *destinationTopic)
+		messageProducer, err = kafka.NewProducer(*brokerAddress, *producerTopic)
 		if err != nil {
 			logger.Fatal("Cannot start message producer", err)
 		}
-		logger.QueueProducerStarted(*destinationTopic)
+		logger.QueueProducerStarted(*producerTopic)
 
-		messageConsumer, err = kafka.NewConsumer(*zookeeperAddress, *sourceGroup, []string{*sourceTopic}, kafka.DefaultConsumerConfig())
+		messageConsumer, err = kafka.NewConsumer(*zookeeperAddress, *consumerGroup, []string{*consumerTopic}, kafka.DefaultConsumerConfig())
 		if err != nil {
 			logger.Fatal("Cannot start message consumer", err)
 		}
-		logger.QueueConsumerStarted(*sourceTopic)
+		logger.QueueConsumerStarted(*consumerTopic)
 		messageConsumer.StartListening(handleMessage)
 
 		waitForSignal()
