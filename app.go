@@ -11,8 +11,11 @@ import (
 	"unicode/utf8"
 
 	"github.com/Financial-Times/kafka-client-go/kafka"
+	status "github.com/Financial-Times/service-status-go/httphandlers"
+	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/twinj/uuid"
+	"net/http"
 )
 
 const messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
@@ -85,12 +88,30 @@ func main() {
 		logger.QueueConsumerStarted(*consumerTopic)
 		messageConsumer.StartListening(handleMessage)
 
+		go enableHealthChecks(messageConsumer)
+
 		waitForSignal()
 		logger.Info("Shutting down Kafka consumer", "", "")
 		messageConsumer.Shutdown()
 	}
 
 	app.Run(os.Args)
+}
+
+func enableHealthChecks(messageConsumer kafka.Consumer) {
+	hc := NewHealthCheck(messageConsumer)
+	router := mux.NewRouter()
+	router.HandleFunc("/__health", hc.Health())
+	router.HandleFunc("/__gtg", status.NewGoodToGoHandler(hc.GTG))
+	router.HandleFunc(status.PingPath, status.PingHandler)
+	router.HandleFunc(status.PingPathDW, status.PingHandler)
+	router.HandleFunc(status.BuildInfoPath, status.BuildInfoHandler)
+	router.HandleFunc(status.BuildInfoPathDW, status.BuildInfoHandler)
+	http.Handle("/", router)
+	err := http.ListenAndServe(":8080", nil)
+	if err != nil {
+		logger.Fatal("Couldn't set up HTTP listener", err)
+	}
 }
 
 func handleMessage(msg kafka.FTMessage) error {
