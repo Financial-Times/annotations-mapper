@@ -34,7 +34,7 @@ func TestHappyHealthCheck(t *testing.T) {
 	hc.Health()(w, req)
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
-	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Proxy Reachable","ok":true`, "Read message queue proxy healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Reachable","ok":true`, "Read message queue healthcheck should be happy")
 }
 
 func TestHealthCheckWithUnhappyConsumer(t *testing.T) {
@@ -46,7 +46,7 @@ func TestHealthCheckWithUnhappyConsumer(t *testing.T) {
 	hc.Health()(w, req)
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
-	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Proxy Reachable","ok":false`, "Read message queue proxy healthcheck should be unhappy")
+	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Reachable","ok":false`, "Read message queue healthcheck should be unhappy")
 }
 
 func TestGTGHappyFlow(t *testing.T) {
