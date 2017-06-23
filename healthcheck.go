@@ -20,8 +20,8 @@ func NewHealthCheck(c kafka.Consumer) *HealthCheck {
 
 func (h *HealthCheck) Health() func(w http.ResponseWriter, r *http.Request) {
 	hc := fthealth.HealthCheck{
-		SystemCode:  "v1-suggestor",
-		Name:        "V1 Suggestor",
+		SystemCode:  "annotations-mapper",
+		Name:        "annotations-mapper",
 		Description: "Checks if all the dependent services are reachable and healthy.",
 		Checks:      []fthealth.Check{h.readQueueCheck()},
 	}
@@ -30,12 +30,12 @@ func (h *HealthCheck) Health() func(w http.ResponseWriter, r *http.Request) {
 
 func (h *HealthCheck) readQueueCheck() fthealth.Check {
 	return fthealth.Check{
-		ID:               "read-message-queue-proxy-reachable",
-		Name:             "Read Message Queue Proxy Reachable",
+		ID:               "read-message-queue-reachable",
+		Name:             "Read Message Queue Reachable",
 		Severity:         1,
 		BusinessImpact:   "Content V1 Metadata can't be read from queue. This will negatively impact V1 metadata availability.",
-		TechnicalSummary: "Read message queue proxy is not reachable/healthy",
-		PanicGuide:       "https://dewey.ft.com/",
+		TechnicalSummary: "Read message queue is not reachable/healthy",
+		PanicGuide:       "https://dewey.ft.com/annotations-mapper.html",
 		Checker:          h.checkKafkaConnectivity,
 	}
 }
