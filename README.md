@@ -5,14 +5,14 @@ Processes metadata about content that comes from QMI system - aka V1 metadata.
 
 * Reads V1 metadata for an article from the  kafka source topic _NativeCmsMetadataPublicationEvents_
 * Filters and transforms it to UP standard json representation
-* Puts the result onto the kafka destination topic _V1ConceptAnnotations_
+* Puts the result onto the kafka destination topic _ConceptAnnotations_
 
 ## Installation
 
 ```
 go get -u github.com/kardianos/govendor
-go get -u github.com/Financial-Times/v1-suggestor
-cd $GOPATH/src/github.com/Financial-Times/v1-suggestor
+go get -u github.com/Financial-Times/annotations-mapper
+cd $GOPATH/src/github.com/Financial-Times/annotations-mapper
 govendor sync
 go build .
 ```
@@ -54,8 +54,7 @@ docker run --name annotations-mapper -p 8080 \
 	--env "CONSUMER_GROUP=annotations-mapper" \
 	--env "CONSUMER_TOPIC=NativeCmsMetadataPublicationEvents" \
 	--env "BROKER_ADDRESS=http://kafka:9092" \
-	--env "PRODUCER_TOPIC=ConceptSuggestions" \
-	--env "ENVIRONMENT=coco-$ENVIRONMENT_TAG" \
+	--env "PRODUCER_TOPIC=ConceptAnnotations" \
 	coco/annotations-mapper:$DOCKER_APP_VERSION
 ````
  

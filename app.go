@@ -45,7 +45,7 @@ func init() {
 }
 
 func main() {
-	app := cli.App("annotations-mapper", "A service to read V1 metadata publish event, filter it and output UP-specific metadata to the destination queue.")
+	app := cli.App("annotations-mapper", "A service to read V1 metadata publish event, filter it and output UPP-specific metadata to the destination queue.")
 	zookeeperAddress := app.String(cli.StringOpt{
 		Name:   "zookeeperAddress",
 		Value:  "localhost:2181",

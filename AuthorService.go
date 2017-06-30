@@ -1,6 +1,6 @@
 package main
 
-// AuthorService extracts and transforms the author taxonomy into a suggestion
+// AuthorService extracts and transforms the author taxonomy into an annotation
 type AuthorService struct {
 	HandledTaxonomy string
 }
