@@ -1,21 +1,21 @@
 package main
 
-// SubjectService extracts and transforms the subject taxonomy into a suggestion
+// SubjectService extracts and transforms the subject taxonomy into an annotation
 type SubjectService struct {
 	HandledTaxonomy string
 }
 
 const subjectURI = "http://www.ft.com/ontology/Subject"
 
-// BuildSuggestions builds a list of subject suggestions from a ContentRef.
+// BuildAnnotations builds a list of subject annotations from a ContentRef.
 // Returns an empty array in case no subject annotations are found
-func (subjectService SubjectService) buildSuggestions(contentRef ContentRef) []suggestion {
+func (subjectService SubjectService) buildAnnotations(contentRef ContentRef) []annotation {
 	subjects := extractTags(subjectService.HandledTaxonomy, contentRef)
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 
 	for _, value := range subjects {
-		suggestions = append(suggestions, buildSuggestion(value, subjectURI, classification))
+		annotations = append(annotations, buildAnnotation(value, subjectURI, classification))
 	}
 
-	return suggestions
+	return annotations
 }

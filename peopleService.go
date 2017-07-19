@@ -1,20 +1,20 @@
 package main
 
-// SubjectService extracts and transforms the subject taxonomy into a suggestion
+// PeopleService extracts and transforms the subject taxonomy into an annotation
 type PeopleService struct {
 	HandledTaxonomy string
 }
 
 const personURI = "http://www.ft.com/ontology/person/Person"
 
-// BuildSuggestions builds a list of subject suggestions from a ContentRef.
+// BuildAnnotations builds a list of subject annotations from a ContentRef.
 // Returns an empty array in case no subject annotations are found
-func (peopleService PeopleService) buildSuggestions(contentRef ContentRef) []suggestion {
+func (peopleService PeopleService) buildAnnotations(contentRef ContentRef) []annotation {
 	people := extractTags(peopleService.HandledTaxonomy, contentRef)
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 
 	for _, value := range people {
-		suggestions = append(suggestions, buildSuggestion(value, personURI, conceptMajorMentions))
+		annotations = append(annotations, buildAnnotation(value, personURI, conceptMajorMentions))
 	}
 
 	if contentRef.PrimaryTheme.CanonicalName != "" {
@@ -24,8 +24,8 @@ func (peopleService PeopleService) buildSuggestions(contentRef ContentRef) []sug
 			Predicate: about,
 			Types:     []string{personURI},
 		}
-		suggestions = append(suggestions, suggestion{Thing: thing})
+		annotations = append(annotations, annotation{Thing: thing})
 	}
 
-	return suggestions
+	return annotations
 }

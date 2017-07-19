@@ -4,145 +4,102 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
-	"net"
-	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 	"unicode/utf8"
 
-	"github.com/Financial-Times/message-queue-go-producer/producer"
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/kafka-client-go/kafka"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
-	"github.com/kr/pretty"
 	"github.com/twinj/uuid"
+	"net/http"
 )
-
-var messageProducer producer.MessageProducer
-var taxonomyHandlers = make(map[string]TaxonomyService)
 
 const messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
 
+var (
+	messageConsumer  kafka.Consumer
+	messageProducer  kafka.Producer
+	logger           *AppLogger
+	taxonomyHandlers map[string]TaxonomyService
+)
+
+func init() {
+	logger = NewAppLogger()
+	taxonomyHandlers = map[string]TaxonomyService{
+		"subjects":         SubjectService{HandledTaxonomy: "subjects"},
+		"sections":         SectionService{HandledTaxonomy: "sections"},
+		"topics":           TopicService{HandledTaxonomy: "topics"},
+		"locations":        LocationService{HandledTaxonomy: "gl"},
+		"genres":           GenreService{HandledTaxonomy: "genres"},
+		"specialReports":   SpecialReportService{HandledTaxonomy: "specialReports"},
+		"alphavilleSeries": AlphavilleSeriesService{HandledTaxonomy: "alphavilleSeriesClassification"},
+		"organisations":    OrganisationService{HandledTaxonomy: "ON"},
+		"people":           PeopleService{HandledTaxonomy: "PN"},
+		"authors":          AuthorService{HandledTaxonomy: "Authors"},
+		"brands":           BrandService{HandledTaxonomy: "Brands"},
+	}
+}
+
 func main() {
-	app := cli.App("V1 suggestor", "A service to read V1 metadata publish event, filter it and output UP-specific metadata to the destination queue.")
-	sourceAddresses := app.Strings(cli.StringsOpt{
-		Name:   "source-addresses",
-		Value:  []string{},
+	app := cli.App("annotations-mapper", "A service to read V1 metadata publish event, filter it and output UPP-specific metadata to the destination queue.")
+	zookeeperAddress := app.String(cli.StringOpt{
+		Name:   "zookeeperAddress",
+		Value:  "localhost:2181",
 		Desc:   "Addresses used by the queue consumer to connect to the queue",
-		EnvVar: "SRC_ADDR",
+		EnvVar: "ZOOKEEPER_ADDRESS",
 	})
-	sourceGroup := app.String(cli.StringOpt{
-		Name:   "source-group",
-		Value:  "",
+	consumerGroup := app.String(cli.StringOpt{
+		Name:   "consumerGroup",
 		Desc:   "Group used to read the messages from the queue",
-		EnvVar: "SRC_GROUP",
+		EnvVar: "CONSUMER_GROUP",
 	})
-	sourceTopic := app.String(cli.StringOpt{
-		Name:   "source-topic",
-		Value:  "",
+	consumerTopic := app.String(cli.StringOpt{
+		Name:   "consumerTopic",
 		Desc:   "The topic to read the meassages from",
-		EnvVar: "SRC_TOPIC",
+		EnvVar: "CONSUMER_TOPIC",
 	})
-	sourceQueue := app.String(cli.StringOpt{
-		Name:   "source-queue",
-		Value:  "",
-		Desc:   "Thew queue to read the messages from",
-		EnvVar: "SRC_QUEUE",
-	})
-	sourceConcurrentProcessing := app.Bool(cli.BoolOpt{
-		Name:   "source-concurrent-processing",
-		Value:  false,
-		Desc:   "Whether the consumer uses concurrent processing for the messages",
-		EnvVar: "SRC_CONCURRENT_PROCESSING",
-	})
-	destinationAddress := app.String(cli.StringOpt{
-		Name:   "destination-address",
-		Value:  "",
+	brokerAddress := app.String(cli.StringOpt{
+		Name:   "brokerAddress",
 		Desc:   "Address used by the producer to connect to the queue",
-		EnvVar: "DEST_ADDRESS",
+		EnvVar: "BROKER_ADDRESS",
 	})
-	destinationTopic := app.String(cli.StringOpt{
-		Name:   "destination-topic",
-		Value:  "",
-		Desc:   "The topic to write the concept suggestion to",
-		EnvVar: "DEST_TOPIC",
-	})
-	destinationQueue := app.String(cli.StringOpt{
-		Name:   "destination-queue",
-		Value:  "",
-		Desc:   "The queue used by the producer",
-		EnvVar: "DEST_QUEUE",
+	producerTopic := app.String(cli.StringOpt{
+		Name:   "producerTopic",
+		Desc:   "The topic to write the concept annotation to",
+		EnvVar: "PRODUCER_TOPIC",
 	})
 
 	app.Action = func() {
-		httpClient := &http.Client{
-			Transport: &http.Transport{
-				Proxy: http.ProxyFromEnvironment,
-				DialContext: (&net.Dialer{
-					Timeout:   30 * time.Second,
-					KeepAlive: 30 * time.Second,
-				}).DialContext,
-				MaxIdleConnsPerHost:   20,
-				TLSHandshakeTimeout:   3 * time.Second,
-				ExpectContinueTimeout: 1 * time.Second,
-			},
+		var err error
+		messageProducer, err = kafka.NewProducer(*brokerAddress, *producerTopic)
+		if err != nil {
+			logger.Fatal("Cannot start message producer", err)
 		}
-		srcConf := consumer.QueueConfig{
-			Addrs:                *sourceAddresses,
-			Group:                *sourceGroup,
-			Topic:                *sourceTopic,
-			Queue:                *sourceQueue,
-			ConcurrentProcessing: *sourceConcurrentProcessing,
+		logger.QueueProducerStarted(*producerTopic)
+
+		messageConsumer, err = kafka.NewConsumer(*zookeeperAddress, *consumerGroup, []string{*consumerTopic}, kafka.DefaultConsumerConfig())
+		if err != nil {
+			logger.Fatal("Cannot start message consumer", err)
 		}
-
-		destConf := producer.MessageProducerConfig{
-			Addr:  *destinationAddress,
-			Topic: *destinationTopic,
-			Queue: *destinationQueue,
-		}
-
-		initLogs(os.Stdout, os.Stdout, os.Stderr)
-		infoLogger.Printf("[Startup] Using source configuration: %# v", pretty.Formatter(srcConf))
-		infoLogger.Printf("[Startup] Using dest configuration: %# v", pretty.Formatter(destConf))
-
-		setupTaxonomyHandlers()
-
-		infoLogger.Printf("[Startup] Handling taxonomies:")
-		for key := range taxonomyHandlers {
-			infoLogger.Printf("\t %v", key)
-		}
-
-		initializeProducer(destConf, httpClient)
-		messageConsumer := initializeConsumer(srcConf, httpClient)
+		logger.QueueConsumerStarted(*consumerTopic)
+		messageConsumer.StartListening(handleMessage)
 
 		go enableHealthChecks(messageConsumer)
 
-		readMessages(messageConsumer)
+		waitForSignal()
+		logger.Info("Shutting down Kafka consumer", "", "")
+		messageConsumer.Shutdown()
 	}
 
 	app.Run(os.Args)
 }
 
-func setupTaxonomyHandlers() {
-	taxonomyHandlers["subjects"] = SubjectService{HandledTaxonomy: "subjects"}
-	taxonomyHandlers["sections"] = SectionService{HandledTaxonomy: "sections"}
-	taxonomyHandlers["topics"] = TopicService{HandledTaxonomy: "topics"}
-	taxonomyHandlers["locations"] = LocationService{HandledTaxonomy: "gl"}
-	taxonomyHandlers["genres"] = GenreService{HandledTaxonomy: "genres"}
-	taxonomyHandlers["specialReports"] = SpecialReportService{HandledTaxonomy: "specialReports"}
-	taxonomyHandlers["alphavilleSeries"] = AlphavilleSeriesService{HandledTaxonomy: "alphavilleSeriesClassification"}
-	taxonomyHandlers["organisations"] = OrganisationService{HandledTaxonomy: "ON"}
-	taxonomyHandlers["people"] = PeopleService{HandledTaxonomy: "PN"}
-	taxonomyHandlers["authors"] = AuthorService{HandledTaxonomy: "Authors"}
-	taxonomyHandlers["brands"] = BrandService{HandledTaxonomy: "Brands"}
-}
-
-func enableHealthChecks(messageConsumer consumer.MessageConsumer) {
-	hc := NewHealthCheck(messageProducer, messageConsumer)
+func enableHealthChecks(messageConsumer kafka.Consumer) {
+	hc := NewHealthCheck(messageConsumer)
 	router := mux.NewRouter()
 	router.HandleFunc("/__health", hc.Health())
 	router.HandleFunc("/__gtg", status.NewGoodToGoHandler(hc.GTG))
@@ -153,87 +110,60 @@ func enableHealthChecks(messageConsumer consumer.MessageConsumer) {
 	http.Handle("/", router)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		errorLogger.Panicf("Couldn't set up HTTP listener: %v\n", err)
+		logger.Fatal("Couldn't set up HTTP listener", err)
 	}
 }
 
-func initializeProducer(config producer.MessageProducerConfig, client *http.Client) {
-	messageProducer = producer.NewMessageProducerWithHTTPClient(config, client)
-	infoLogger.Printf("[Startup] Producer: %# v", pretty.Formatter(messageProducer))
-}
-
-func initializeConsumer(config consumer.QueueConfig, client *http.Client) consumer.MessageConsumer {
-	messageConsumer := consumer.NewConsumer(config, handleMessage, client)
-	infoLogger.Printf("[Startup] Consumer: %# v", pretty.Formatter(messageConsumer))
-	return messageConsumer
-}
-
-func readMessages(messageConsumer consumer.MessageConsumer) {
-	var consumerWaitGroup sync.WaitGroup
-	consumerWaitGroup.Add(1)
-
-	go func() {
-		messageConsumer.Start()
-		consumerWaitGroup.Done()
-	}()
-
-	ch := make(chan os.Signal)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	<-ch
-	messageConsumer.Stop()
-	consumerWaitGroup.Wait()
-}
-
-func handleMessage(msg consumer.Message) {
+func handleMessage(msg kafka.FTMessage) error {
 	tid := msg.Headers["X-Request-Id"]
 
 	var metadataPublishEvent MetadataPublishEvent
 	err := json.Unmarshal([]byte(msg.Body), &metadataPublishEvent)
 	if err != nil {
-		errorLogger.Printf("[%s] Cannot unmarshal message body:[%v]", tid, err.Error())
-		return
+		logger.Error("Cannot unmarshal message body", tid, "", err)
+		return err
 	}
 
-	infoLogger.Printf("[%s] Processing metadata publish event for uuid [%s]", tid, metadataPublishEvent.UUID)
+	logger.Info("Processing metadata publish event", tid, metadataPublishEvent.UUID)
 
 	metadataXML, err := base64.StdEncoding.DecodeString(metadataPublishEvent.Value)
 	if err != nil {
-		errorLogger.Printf("[%s] Error decoding body for uuid:  [%s]", tid, err.Error())
-		return
+		logger.Error("Error decoding body", tid, metadataPublishEvent.UUID, err)
+		return err
 	}
 
 	metadata, err, hadInvalidChars := unmarshalMetadata(metadataXML)
 
 	if err != nil {
-		errorLogger.Printf("[%s] Error unmarshalling metadata XML for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
+		logger.Error("Error unmarshalling metadata XML", tid, metadataPublishEvent.UUID, err)
 		if hadInvalidChars {
-			infoLogger.Printf("[%s] Metadata XML for UUID [%s] had invalid UTF8 characters.", tid, metadataPublishEvent.UUID)
+			logger.Info("Metadata XML had invalid UTF8 characters.", tid, metadataPublishEvent.UUID)
 		}
-		return
+		return err
 	}
 
-	suggestions := []suggestion{}
-	for key, value := range taxonomyHandlers {
-		infoLogger.Printf("[%s] Processing taxonomy [%s]", tid, key)
-		suggestions = append(suggestions, value.buildSuggestions(metadata)...)
+	annotations := []annotation{}
+	for _, value := range taxonomyHandlers {
+		annotations = append(annotations, value.buildAnnotations(metadata)...)
 	}
 
-	conceptSuggestion := ConceptSuggestion{UUID: metadataPublishEvent.UUID, Suggestions: suggestions}
+	conceptAnnotations := ConceptAnnotations{UUID: metadataPublishEvent.UUID, Annotations: annotations}
 
-	marshalledSuggestions, err := json.Marshal(conceptSuggestion)
+	marshalledAnnotations, err := json.Marshal(conceptAnnotations)
 	if err != nil {
-		errorLogger.Printf("[%s] Error marshalling the concept suggestions for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
-		return
+		logger.Error("Error marshalling the concept annotations", tid, metadataPublishEvent.UUID, err)
+		return err
 	}
 
-	var headers = buildConceptSuggestionsHeader(msg.Headers)
-	message := producer.Message{Headers: headers, Body: string(marshalledSuggestions)}
-	err = messageProducer.SendMessage(conceptSuggestion.UUID, message)
+	var headers = buildConceptAnnotationsHeader(msg.Headers)
+	message := kafka.FTMessage{Headers: headers, Body: string(marshalledAnnotations)}
+	err = messageProducer.SendMessage(message)
 	if err != nil {
-		errorLogger.Printf("[%s] Error sending concept suggestion to queue for UUID [%v]: [%v]", tid, metadataPublishEvent.UUID, err.Error())
+		logger.Error("Error sending concept annotation to queue", tid, metadataPublishEvent.UUID, err)
+		return err
 	}
-
-	infoLogger.Printf("[%s] Sent suggestion message for [%s] with message ID [%s] to queue.", tid, metadataPublishEvent.UUID, headers["Message-Id"])
+	logger.Info("Sent annotation message to queue", tid, metadataPublishEvent.UUID)
+	return nil
 }
 
 func unmarshalMetadata(metadataXML []byte) (ContentRef, error, bool) {
@@ -245,13 +175,19 @@ func unmarshalMetadata(metadataXML []byte) (ContentRef, error, bool) {
 	return metadata, err, !utf8.Valid(metadataXML)
 }
 
-func buildConceptSuggestionsHeader(publishEventHeaders map[string]string) map[string]string {
+func buildConceptAnnotationsHeader(publishEventHeaders map[string]string) map[string]string {
 	return map[string]string{
 		"Message-Id":        uuid.NewV4().String(),
-		"Message-Type":      "concept-suggestions",
+		"Message-Type":      "concept-annotation",
 		"Content-Type":      publishEventHeaders["Content-Type"],
 		"X-Request-Id":      publishEventHeaders["X-Request-Id"],
 		"Origin-System-Id":  publishEventHeaders["Origin-System-Id"],
 		"Message-Timestamp": time.Now().Format(messageTimestampDateFormat),
 	}
+}
+
+func waitForSignal() {
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	<-ch
 }

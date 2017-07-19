@@ -6,11 +6,11 @@ type BrandService struct {
 	HandledTaxonomy string
 }
 
-func (brandService BrandService) buildSuggestions(contentRef ContentRef) []suggestion {
+func (brandService BrandService) buildAnnotations(contentRef ContentRef) []annotation {
 	authors := extractTags(brandService.HandledTaxonomy, contentRef)
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 	for _, value := range authors {
-		suggestions = append(suggestions, buildSuggestion(value, brandURI, classification))
+		annotations = append(annotations, buildAnnotation(value, brandURI, classification))
 	}
-	return suggestions
+	return annotations
 }

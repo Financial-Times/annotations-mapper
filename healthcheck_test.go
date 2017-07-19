@@ -1,35 +1,32 @@
 package main
 
 import (
-	"errors"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Financial-Times/message-queue-go-producer/producer"
-	"github.com/Financial-Times/message-queue-gonsumer/consumer"
+	"github.com/Financial-Times/kafka-client-go/kafka"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 )
 
-func initializeHealthCheck(isProducerConnectionHealthy bool, isConsumerConnectionHealthy bool) *HealthCheck {
-	return &HealthCheck{
-		consumer: &mockConsumerInstance{isConnectionHealthy: isConsumerConnectionHealthy},
-		producer: &mockProducerInstance{isConnectionHealthy: isProducerConnectionHealthy},
-	}
+type mockConsumer struct {
+	err error
 }
 
-func TestNewHealthCheck(t *testing.T) {
-	hc := NewHealthCheck(
-		producer.NewMessageProducer(producer.MessageProducerConfig{}),
-		consumer.NewConsumer(consumer.QueueConfig{}, func(m consumer.Message) {}, http.DefaultClient),
-	)
+func (mc mockConsumer) ConnectivityCheck() error {
+	return mc.err
+}
 
-	assert.NotNil(t, hc.consumer)
-	assert.NotNil(t, hc.producer)
+func (mc mockConsumer) StartListening(messageHandler func(message kafka.FTMessage) error) {
+	return
+}
+
+func (mc mockConsumer) Shutdown() {
+	return
 }
 
 func TestHappyHealthCheck(t *testing.T) {
-	hc := initializeHealthCheck(true, true)
+	hc := HealthCheck{mockConsumer{nil}}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
 	w := httptest.NewRecorder()
@@ -37,12 +34,11 @@ func TestHappyHealthCheck(t *testing.T) {
 	hc.Health()(w, req)
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
-	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Proxy Reachable","ok":true`, "Read message queue proxy healthcheck should be happy")
-	assert.Contains(t, w.Body.String(), `"name":"Write Message Queue Proxy Reachable","ok":true`, "Write message queue proxy healthcheck should be happy")
+	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Reachable","ok":true`, "Read message queue healthcheck should be happy")
 }
 
 func TestHealthCheckWithUnhappyConsumer(t *testing.T) {
-	hc := initializeHealthCheck(true, false)
+	hc := HealthCheck{mockConsumer{errors.New("Error connecting to the queue")}}
 
 	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
 	w := httptest.NewRecorder()
@@ -50,38 +46,11 @@ func TestHealthCheckWithUnhappyConsumer(t *testing.T) {
 	hc.Health()(w, req)
 
 	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
-	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Proxy Reachable","ok":false`, "Read message queue proxy healthcheck should be unhappy")
-	assert.Contains(t, w.Body.String(), `"name":"Write Message Queue Proxy Reachable","ok":true`, "Write message queue proxy healthcheck should be happy")
-}
-
-func TestHealthCheckWithUnhappyProducer(t *testing.T) {
-	hc := initializeHealthCheck(false, true)
-
-	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
-	w := httptest.NewRecorder()
-
-	hc.Health()(w, req)
-
-	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
-	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Proxy Reachable","ok":true`, "Read message queue proxy healthcheck should be happy")
-	assert.Contains(t, w.Body.String(), `"name":"Write Message Queue Proxy Reachable","ok":false`, "Write message queue proxy healthcheck should be unhappy")
-}
-
-func TestUnhappyHealthCheck(t *testing.T) {
-	hc := initializeHealthCheck(false, false)
-
-	req := httptest.NewRequest("GET", "http://example.com/__health", nil)
-	w := httptest.NewRecorder()
-
-	hc.Health()(w, req)
-
-	assert.Equal(t, 200, w.Code, "It should return HTTP 200 OK")
-	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Proxy Reachable","ok":false`, "Read message queue proxy healthcheck should be unhappy")
-	assert.Contains(t, w.Body.String(), `"name":"Write Message Queue Proxy Reachable","ok":false`, "Write message queue proxy healthcheck should be unhappy")
+	assert.Contains(t, w.Body.String(), `"name":"Read Message Queue Reachable","ok":false`, "Read message queue healthcheck should be unhappy")
 }
 
 func TestGTGHappyFlow(t *testing.T) {
-	hc := initializeHealthCheck(true, true)
+	hc := HealthCheck{mockConsumer{nil}}
 
 	status := hc.GTG()
 	assert.True(t, status.GoodToGo)
@@ -89,51 +58,9 @@ func TestGTGHappyFlow(t *testing.T) {
 }
 
 func TestGTGBrokenConsumer(t *testing.T) {
-	hc := initializeHealthCheck(true, false)
+	hc := HealthCheck{mockConsumer{errors.New("Error connecting to the queue")}}
 
 	status := hc.GTG()
 	assert.False(t, status.GoodToGo)
 	assert.Equal(t, "Error connecting to the queue", status.Message)
-}
-
-func TestGTGBrokenProducer(t *testing.T) {
-	hc := initializeHealthCheck(false, true)
-
-	status := hc.GTG()
-	assert.False(t, status.GoodToGo)
-	assert.Equal(t, "Error connecting to the queue", status.Message)
-}
-
-type mockProducerInstance struct {
-	isConnectionHealthy bool
-}
-
-type mockConsumerInstance struct {
-	isConnectionHealthy bool
-}
-
-func (p *mockProducerInstance) SendMessage(string, producer.Message) error {
-	return nil
-}
-
-func (p *mockProducerInstance) ConnectivityCheck() (string, error) {
-	if p.isConnectionHealthy {
-		return "", nil
-	}
-
-	return "", errors.New("Error connecting to the queue")
-}
-
-func (c *mockConsumerInstance) Start() {
-}
-
-func (c *mockConsumerInstance) Stop() {
-}
-
-func (c *mockConsumerInstance) ConnectivityCheck() (string, error) {
-	if c.isConnectionHealthy {
-		return "", nil
-	}
-
-	return "", errors.New("Error connecting to the queue")
 }

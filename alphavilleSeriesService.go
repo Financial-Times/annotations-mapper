@@ -1,21 +1,21 @@
 package main
 
-// AlphavilleSeriesService extracts and transforms the series taxonomy into a suggestion
+// AlphavilleSeriesService extracts and transforms the series taxonomy into an annotation
 type AlphavilleSeriesService struct {
 	HandledTaxonomy string
 }
 
 const alphavilleSeriesURI = "http://www.ft.com/ontology/AlphavilleSeries"
 
-// BuildSuggestions builds a list of topic suggestions from a ContentRef.
+// BuildAnnotations builds a list of topic annotations from a ContentRef.
 // Returns an empty array in case no topic annotations are found
-func (alphavilleSeriesService AlphavilleSeriesService) buildSuggestions(contentRef ContentRef) []suggestion {
+func (alphavilleSeriesService AlphavilleSeriesService) buildAnnotations(contentRef ContentRef) []annotation {
 	series := extractTags(alphavilleSeriesService.HandledTaxonomy, contentRef)
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 
 	for _, value := range series {
-		suggestions = append(suggestions, buildSuggestion(value, alphavilleSeriesURI, classification))
+		annotations = append(annotations, buildAnnotation(value, alphavilleSeriesURI, classification))
 	}
 
-	return suggestions
+	return annotations
 }

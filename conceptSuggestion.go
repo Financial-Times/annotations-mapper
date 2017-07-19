@@ -1,12 +1,12 @@
 package main
 
-// ConceptSuggestion models the suggestion as it will be written on the queue
-type ConceptSuggestion struct {
+// ConceptAnnotations models the annotations as it will be written on the queue
+type ConceptAnnotations struct {
 	UUID        string       `json:"uuid"`
-	Suggestions []suggestion `json:"suggestions"`
+	Annotations []annotation `json:"annotations"`
 }
 
-type suggestion struct {
+type annotation struct {
 	Thing      thing        `json:"thing"`
 	Provenance []provenance `json:"provenances,omitempty"`
 }

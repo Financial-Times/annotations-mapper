@@ -1,30 +1,33 @@
 package main
 
 import (
+	uuidutils "github.com/Financial-Times/uuid-utils-go"
 	"strings"
 )
 
 // TaxonomyService defines the operations used to process taxonomies
 type TaxonomyService interface {
-	buildSuggestions(ContentRef) []suggestion
+	buildAnnotations(ContentRef) []annotation
 }
 
-const conceptMentions = "mentions"
-const conceptMajorMentions = "majorMentions"
-const classification = "isClassifiedBy"
-const primaryClassification = "isPrimarilyClassifiedBy"
-const about = "about"
-const hasAuthor = "hasAuthor"
+const (
+	conceptMentions       = "mentions"
+	conceptMajorMentions  = "majorMentions"
+	classification        = "isClassifiedBy"
+	primaryClassification = "isPrimarilyClassifiedBy"
+	about                 = "about"
+	hasAuthor             = "hasAuthor"
 
-const relevanceURI = "http://api.ft.com/scoringsystem/FT-RELEVANCE-SYSTEM"
-const confidenceURI = "http://api.ft.com/scoringsystem/FT-CONFIDENCE-SYSTEM"
+	relevanceURI  = "http://api.ft.com/scoringsystem/FT-RELEVANCE-SYSTEM"
+	confidenceURI = "http://api.ft.com/scoringsystem/FT-CONFIDENCE-SYSTEM"
+)
 
 func transformScore(score int) float32 {
 	return float32(score) / float32(100.0)
 }
 
 func generateID(cmrTermID string) string {
-	return "http://api.ft.com/things/" + NewNameUUIDFromBytes([]byte(cmrTermID)).String()
+	return "http://api.ft.com/things/" + uuidutils.NewV3UUID(cmrTermID).String()
 }
 
 func extractTags(wantedTagName string, contentRef ContentRef) []tag {
@@ -37,7 +40,7 @@ func extractTags(wantedTagName string, contentRef ContentRef) []tag {
 	return wantedTags
 }
 
-func buildSuggestion(tag tag, thingType string, predicate string) suggestion {
+func buildAnnotation(tag tag, thingType string, predicate string) annotation {
 	relevance := score{
 		ScoringSystem: relevanceURI,
 		Value:         transformScore(tag.TagScore.Relevance),
@@ -59,5 +62,5 @@ func buildSuggestion(tag tag, thingType string, predicate string) suggestion {
 		Types:     []string{thingType},
 	}
 
-	return suggestion{Thing: thing, Provenance: provenances}
+	return annotation{Thing: thing, Provenance: provenances}
 }

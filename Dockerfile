@@ -1,6 +1,6 @@
 FROM golang:1.8-alpine
 
-ENV PROJECT=v1-suggestor
+ENV PROJECT=annotations-mapper
 COPY . /${PROJECT}-sources/
 
 RUN apk --no-cache --virtual .build-dependencies add git \
@@ -21,6 +21,7 @@ RUN apk --no-cache --virtual .build-dependencies add git \
   && echo "Fetching dependencies..." \
   && go get -u github.com/kardianos/govendor \
   && $GOPATH/bin/govendor sync \
+  && go get -v \
   && go build -ldflags="${LDFLAGS}" \
   && mv ${PROJECT} /${PROJECT} \
   && apk del .build-dependencies \
@@ -28,4 +29,4 @@ RUN apk --no-cache --virtual .build-dependencies add git \
 
 WORKDIR /
 
-CMD [ "/v1-suggestor" ]
+CMD [ "/annotations-mapper" ]

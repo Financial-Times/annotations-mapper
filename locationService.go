@@ -1,20 +1,20 @@
 package main
 
-// LocationService extracts and transforms the location taxonomy into a suggestion
+// LocationService extracts and transforms the location taxonomy into an annotation
 type LocationService struct {
 	HandledTaxonomy string
 }
 
 const locationURI = "http://www.ft.com/ontology/Location"
 
-// BuildSuggestions builds a list of location suggestions from a ContentRef.
+// BuildAnnotations builds a list of location annotations from a ContentRef.
 // Returns an empty array in case no location annotations are found
-func (locationService LocationService) buildSuggestions(contentRef ContentRef) []suggestion {
+func (locationService LocationService) buildAnnotations(contentRef ContentRef) []annotation {
 	locations := extractTags(locationService.HandledTaxonomy, contentRef)
-	suggestions := []suggestion{}
+	annotations := []annotation{}
 
 	for _, value := range locations {
-		suggestions = append(suggestions, buildSuggestion(value, locationURI, conceptMajorMentions))
+		annotations = append(annotations, buildAnnotation(value, locationURI, conceptMajorMentions))
 	}
 
 	if contentRef.PrimaryTheme.CanonicalName != "" {
@@ -24,8 +24,8 @@ func (locationService LocationService) buildSuggestions(contentRef ContentRef) [
 			Predicate: about,
 			Types:     []string{locationURI},
 		}
-		suggestions = append(suggestions, suggestion{Thing: thing})
+		annotations = append(annotations, annotation{Thing: thing})
 	}
 
-	return suggestions
+	return annotations
 }
