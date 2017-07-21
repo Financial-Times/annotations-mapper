@@ -143,10 +143,10 @@ func handleMessage(msg kafka.FTMessage) error {
 		} else {
 			logger.ErrorEventWithUUID(tid,  metadataPublishEvent.UUID,errMsg, err)
 		}
-		logger.MonitoringTypeValidationEvent(tid, metadataPublishEvent.UUID, contentType, err.Error(), false)
+		logger.MonitoringValidationEvent(tid, metadataPublishEvent.UUID, contentType, err.Error(), false)
 		return err
 	}
-	logger.MonitoringTypeValidationEvent(tid, metadataPublishEvent.UUID, contentType, "Successfully mapped", true)
+	logger.MonitoringValidationEvent(tid, metadataPublishEvent.UUID, contentType, "Successfully mapped", true)
 
 	annotations := []annotation{}
 	for _, value := range taxonomyHandlers {
