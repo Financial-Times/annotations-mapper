@@ -1,0 +1,8 @@
+# Values used for the deployed application.
+replicaCount: 2
+service:
+  name: annotations-mapper
+env:
+  CONSUMER_GROUP: annotations-mapper
+  CONSUMER_TOPIC: NativeCmsMetadataPublicationEvents
+  PRODUCER_TOPIC: ConceptAnnotations
