@@ -10,6 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
@@ -20,19 +21,20 @@ import (
 
 const (
 	messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
-	serviceName = "annotations-mapper"
-	contentType = "annotations"
+	serviceName                = "annotations-mapper"
+	contentType                = "annotations"
+	consumerStartedEvent       = "consume_queue"
+	producerStartedEvent       = "produce_queue"
 )
 
 var (
 	messageConsumer  kafka.Consumer
 	messageProducer  kafka.Producer
-	logger           *AppLogger
 	taxonomyHandlers map[string]TaxonomyService
 )
 
 func init() {
-	logger = NewAppLogger(serviceName)
+	logger.InitDefaultLogger(serviceName)
 	taxonomyHandlers = map[string]TaxonomyService{
 		"subjects":         SubjectService{HandledTaxonomy: "subjects"},
 		"sections":         SectionService{HandledTaxonomy: "sections"},
@@ -83,13 +85,13 @@ func main() {
 		if err != nil {
 			logger.FatalEvent("Cannot start message producer", err)
 		}
-		logger.QueueProducerStarted(*producerTopic)
+		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue consumer: %v", *producerTopic)
 
 		messageConsumer, err = kafka.NewConsumer(*zookeeperAddress, *consumerGroup, []string{*consumerTopic}, kafka.DefaultConsumerConfig())
 		if err != nil {
 			logger.FatalEvent("Cannot start message consumer", err)
 		}
-		logger.QueueConsumerStarted(*consumerTopic)
+		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue producer: %v", *consumerTopic)
 		messageConsumer.StartListening(handleMessage)
 
 		go enableHealthChecks(messageConsumer)
@@ -123,11 +125,11 @@ func handleMessage(msg kafka.FTMessage) error {
 	var metadataPublishEvent MetadataPublishEvent
 	err := json.Unmarshal([]byte(msg.Body), &metadataPublishEvent)
 	if err != nil {
-		logger.ErrorEvent(tid,"Cannot unmarshal message body", err)
+		logger.ErrorEvent(tid, "Cannot unmarshal message body", err)
 		return err
 	}
 
-	logger.InfoEventWithUUID(tid,  metadataPublishEvent.UUID,"Processing metadata publish event")
+	logger.InfoEventWithUUID(tid, metadataPublishEvent.UUID, "Processing metadata publish event")
 
 	metadataXML, err := base64.StdEncoding.DecodeString(metadataPublishEvent.Value)
 	if err != nil {
@@ -139,9 +141,9 @@ func handleMessage(msg kafka.FTMessage) error {
 	if err != nil {
 		errMsg := "Error unmarshalling metadata XML"
 		if hadInvalidChars {
-			logger.ErrorEventWithUUID(tid,  metadataPublishEvent.UUID,errMsg+"Metadata XML had invalid UTF8 characters.", err)
+			logger.ErrorEventWithUUID(tid, metadataPublishEvent.UUID, errMsg+"Metadata XML had invalid UTF8 characters.", err)
 		} else {
-			logger.ErrorEventWithUUID(tid,  metadataPublishEvent.UUID,errMsg, err)
+			logger.ErrorEventWithUUID(tid, metadataPublishEvent.UUID, errMsg, err)
 		}
 		logger.MonitoringValidationEvent(tid, metadataPublishEvent.UUID, contentType, err.Error(), false)
 		return err
@@ -157,7 +159,7 @@ func handleMessage(msg kafka.FTMessage) error {
 
 	marshalledAnnotations, err := json.Marshal(conceptAnnotations)
 	if err != nil {
-		logger.ErrorEventWithUUID( tid, metadataPublishEvent.UUID, "Error marshalling concept annotations",err)
+		logger.ErrorEventWithUUID(tid, metadataPublishEvent.UUID, "Error marshalling concept annotations", err)
 		return err
 	}
 
