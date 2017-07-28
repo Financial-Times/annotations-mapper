@@ -17,6 +17,18 @@
 			"revisionTime": "2017-07-27T14:33:01Z"
 		},
 		{
+			"checksumSHA1": "cT6+XPBZiXsFbb7cXT6AYNrZyuM=",
+			"path": "github.com/Sirupsen/logrus",
+			"revision": "3f603f494d61c73457fb234161d8982b9f0f0b71",
+			"revisionTime": "2017-02-07T18:34:08Z"
+		},
+		{
+			"checksumSHA1": "Lglgc8iIRhqbqd8fpAZKpo/eqeY=",
+			"path": "github.com/Sirupsen/logrus/hooks/test",
+			"revision": "3f603f494d61c73457fb234161d8982b9f0f0b71",
+			"revisionTime": "2017-02-07T18:34:08Z"
+		},
+		{
 			"checksumSHA1": "efJSs//9AHdDmQklerOPAYoae40=",
 			"path": "github.com/Financial-Times/kafka-client-go/kafka",
 			"revision": "9b51d3f2fa101211984b96ecf73f045afb38e29c",
