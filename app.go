@@ -22,7 +22,7 @@ import (
 const (
 	messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
 	serviceName                = "annotations-mapper"
-	contentType                = "annotations"
+	contentType                = "Annotations"
 	consumerStartedEvent       = "consume_queue"
 	producerStartedEvent       = "produce_queue"
 )
@@ -148,7 +148,6 @@ func handleMessage(msg kafka.FTMessage) error {
 		logger.MonitoringValidationEvent(tid, metadataPublishEvent.UUID, contentType, err.Error(), false)
 		return err
 	}
-	logger.MonitoringValidationEvent(tid, metadataPublishEvent.UUID, contentType, "Successfully mapped", true)
 
 	annotations := []annotation{}
 	for _, value := range taxonomyHandlers {
@@ -170,7 +169,8 @@ func handleMessage(msg kafka.FTMessage) error {
 		logger.ErrorEventWithUUID(tid, metadataPublishEvent.UUID, "Error sending concept annotations to queue", err)
 		return err
 	}
-	logger.InfoEventWithUUID(tid, metadataPublishEvent.UUID, "Sent annotation message to queue")
+
+	logger.MonitoringValidationEvent(tid, metadataPublishEvent.UUID, contentType, "Successfully mapped", true)
 	return nil
 }
 
