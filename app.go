@@ -25,6 +25,7 @@ const (
 	contentType                = "Annotations"
 	consumerStartedEvent       = "consume_queue"
 	producerStartedEvent       = "produce_queue"
+	mapperEvent                = "Map"
 )
 
 var (
@@ -83,15 +84,15 @@ func main() {
 		var err error
 		messageProducer, err = kafka.NewProducer(*brokerAddress, *producerTopic)
 		if err != nil {
-			logger.FatalEvent("Cannot start message producer", err)
+			logger.Fatalf(nil, "Cannot start message producer %v", err)
 		}
 		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue consumer: %v", *producerTopic)
 
 		messageConsumer, err = kafka.NewConsumer(*zookeeperAddress, *consumerGroup, []string{*consumerTopic}, kafka.DefaultConsumerConfig())
 		if err != nil {
-			logger.FatalEvent("Cannot start message consumer", err)
+			logger.Fatalf(nil, "Cannot start message consumer %v", err)
 		}
-		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue producer: %v", *consumerTopic)
+		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue producer: %s", *consumerTopic)
 		messageConsumer.StartListening(handleMessage)
 
 		go enableHealthChecks(messageConsumer)
@@ -115,7 +116,7 @@ func enableHealthChecks(messageConsumer kafka.Consumer) {
 	http.Handle("/", router)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		logger.FatalEvent("Couldn't set up HTTP listener", err)
+		logger.Fatalf(nil, "Couldn't set up HTTP listener %v", err)
 	}
 }
 
@@ -125,15 +126,15 @@ func handleMessage(msg kafka.FTMessage) error {
 	var metadataPublishEvent MetadataPublishEvent
 	err := json.Unmarshal([]byte(msg.Body), &metadataPublishEvent)
 	if err != nil {
-		logger.ErrorEvent(tid, "Cannot unmarshal message body", err)
+		logger.NewEntry(tid).Errorf("Cannot unmarshal message body %v", err)
 		return err
 	}
 
-	logger.InfoEventWithUUID(tid, metadataPublishEvent.UUID, "Processing metadata publish event")
+	logger.NewEntry(tid).WithUUID(metadataPublishEvent.UUID).Info("Processing metadata publish event")
 
 	metadataXML, err := base64.StdEncoding.DecodeString(metadataPublishEvent.Value)
 	if err != nil {
-		logger.ErrorEventWithUUID(tid, metadataPublishEvent.UUID, "Error decoding body", err)
+		logger.NewEntry(tid).WithUUID(metadataPublishEvent.UUID).Errorf("Error decoding body %v", err)
 		return err
 	}
 
@@ -141,11 +142,18 @@ func handleMessage(msg kafka.FTMessage) error {
 	if err != nil {
 		errMsg := "Error unmarshalling metadata XML"
 		if hadInvalidChars {
-			logger.ErrorEventWithUUID(tid, metadataPublishEvent.UUID, errMsg+"Metadata XML had invalid UTF8 characters.", err)
+			logger.NewEntry(tid).WithUUID(metadataPublishEvent.UUID).Errorf("%s Metadata XML had invalid UTF8 characters. %v", errMsg, err)
 		} else {
-			logger.ErrorEventWithUUID(tid, metadataPublishEvent.UUID, errMsg, err)
+			logger.NewEntry(tid).WithUUID(metadataPublishEvent.UUID).Errorf("%s - %v", errMsg, err)
 		}
-		logger.MonitoringValidationEvent(tid, metadataPublishEvent.UUID, contentType, err.Error(), false)
+
+		// Log validation error as a monitoring event
+		entry := logger.NewMonitoringEntry(mapperEvent, tid, contentType).WithValidFlag(false)
+		if metadataPublishEvent.UUID != "" {
+			entry = entry.WithUUID(metadataPublishEvent.UUID)
+		}
+		entry.Warnf("Message is not valid, due to: %v", err)
+
 		return err
 	}
 
@@ -158,7 +166,7 @@ func handleMessage(msg kafka.FTMessage) error {
 
 	marshalledAnnotations, err := json.Marshal(conceptAnnotations)
 	if err != nil {
-		logger.ErrorEventWithUUID(tid, metadataPublishEvent.UUID, "Error marshalling concept annotations", err)
+		logger.NewEntry(tid).WithUUID(metadataPublishEvent.UUID).Errorf("Error marshalling concept annotations %v", err)
 		return err
 	}
 
@@ -166,11 +174,12 @@ func handleMessage(msg kafka.FTMessage) error {
 	message := kafka.FTMessage{Headers: headers, Body: string(marshalledAnnotations)}
 	err = messageProducer.SendMessage(message)
 	if err != nil {
-		logger.ErrorEventWithUUID(tid, metadataPublishEvent.UUID, "Error sending concept annotations to queue", err)
+		logger.NewEntry(tid).WithUUID(metadataPublishEvent.UUID).Errorf("Error sending concept annotations to queue %v", err)
 		return err
 	}
 
-	logger.MonitoringValidationEvent(tid, metadataPublishEvent.UUID, contentType, "Successfully mapped", true)
+	logger.NewMonitoringEntry(mapperEvent, tid, contentType).WithUUID(metadataPublishEvent.UUID).
+		WithValidFlag(true).Info("Successfully mapped")
 	return nil
 }
 

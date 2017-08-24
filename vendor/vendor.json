@@ -11,10 +11,10 @@
 			"versionExact": "0.3.0"
 		},
 		{
-			"checksumSHA1": "e2f5y/lzWdiHBgufdQccz72xCug=",
+			"checksumSHA1": "Al+hrQC8N1gSSdp89Q9qUWjimEU=",
 			"path": "github.com/Financial-Times/go-logger",
-			"revision": "d1c80aa40279df1fdae64d24e293fd779d5c74e4",
-			"revisionTime": "2017-08-10T11:21:38Z"
+			"revision": "a889151dfc3063911fa46f22181f85a2e0d49ac9",
+			"revisionTime": "2017-08-24T08:15:09Z"
 		},
 		{
 			"checksumSHA1": "efJSs//9AHdDmQklerOPAYoae40=",
@@ -50,11 +50,11 @@
 			"revisionTime": "2017-02-07T18:34:08Z"
 		},
 		{
- 			"checksumSHA1": "VLLpfioPkGDIhtY86DHsZaCPXQo=",
- 			"path": "github.com/Sirupsen/logrus/hooks/test",
- 			"revision": "a62b1531c0b6f08944e96850e76a95a1dd6e8f9b",
- 			"revisionTime": "2017-05-25T00:53:41Z"
- 		},
+			"checksumSHA1": "VLLpfioPkGDIhtY86DHsZaCPXQo=",
+			"path": "github.com/Sirupsen/logrus/hooks/test",
+			"revision": "a62b1531c0b6f08944e96850e76a95a1dd6e8f9b",
+			"revisionTime": "2017-05-25T00:53:41Z"
+		},
 		{
 			"checksumSHA1": "OFu4xJEIjiI8Suu+j/gabfp+y6Q=",
 			"origin": "github.com/stretchr/testify/vendor/github.com/davecgh/go-spew/spew",
