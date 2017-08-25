@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHandleMessageInvalidWhitelist(t *testing.T) {
-	whitelist = regexp.MustCompile("http://cmdb.ft.com/systems/methode-web-pub")
+func TestHandleMessageWithUnsupportedSystemCode(t *testing.T) {
+	whitelist = regexp.MustCompile("http://cmdb\\.ft\\.com/systems/methode-web-pub")
 
 	msg := kafka.FTMessage{}
 	msg.Headers = make(map[string]string)
@@ -25,8 +25,8 @@ func TestHandleMessageInvalidWhitelist(t *testing.T) {
 	assert.Equal(t, "Skipping annotations published with Origin-System-Id \"http://cmdb.ft.com/systems/pac\". It does not match the configured whitelist.", logLine)
 }
 
-func TestHandleMessageValidWhitelist(t *testing.T) {
-	whitelist = regexp.MustCompile("http://cmdb.ft.com/systems/methode-web-pub")
+func TestHandleMessageWithSupportedSystemCode(t *testing.T) {
+	whitelist = regexp.MustCompile("http://cmdb\\.ft\\.com/systems/methode-web-pub")
 
 	msg := kafka.FTMessage{}
 	msg.Headers = make(map[string]string)

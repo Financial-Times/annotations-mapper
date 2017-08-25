@@ -80,7 +80,7 @@ func main() {
 		Name:   "whitelistRegex",
 		Desc:   "The regex to use to filter messages based on Origin-System-Id.",
 		EnvVar: "WHITELIST_REGEX",
-		Value:  "http://cmdb.ft.com/systems/methode-web-pub",
+		Value:  "http://cmdb\\.ft\\.com/systems/methode-web-pub",
 	})
 
 	app.Action = func() {
