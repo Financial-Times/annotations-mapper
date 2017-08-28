@@ -11,10 +11,10 @@
 			"versionExact": "0.3.0"
 		},
 		{
-			"checksumSHA1": "Al+hrQC8N1gSSdp89Q9qUWjimEU=",
+			"checksumSHA1": "d6isi10Jfk7YMltYxVNgQ68MYSQ=",
 			"path": "github.com/Financial-Times/go-logger",
-			"revision": "a889151dfc3063911fa46f22181f85a2e0d49ac9",
-			"revisionTime": "2017-08-24T08:15:09Z"
+			"revision": "8847817bc6f87aa25c2e3e0e90f39ccaafcc00d4",
+			"revisionTime": "2017-08-25T09:01:56Z"
 		},
 		{
 			"checksumSHA1": "efJSs//9AHdDmQklerOPAYoae40=",
