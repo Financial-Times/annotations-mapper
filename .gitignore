@@ -1,6 +1,6 @@
 .idea/
 annotations-mapper.exe
 /.project
-annotations-mapper
+/annotations-mapper
 .vscode/
 vendor/*/
