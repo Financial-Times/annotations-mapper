@@ -4,18 +4,21 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"os"
 	"os/signal"
+	"regexp"
 	"syscall"
 	"time"
 	"unicode/utf8"
+
+	"net/http"
 
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
 	"github.com/jawher/mow.cli"
 	"github.com/twinj/uuid"
-	"net/http"
 )
 
 const messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
@@ -25,6 +28,7 @@ var (
 	messageProducer  kafka.Producer
 	logger           *AppLogger
 	taxonomyHandlers map[string]TaxonomyService
+	whitelist        *regexp.Regexp
 )
 
 func init() {
@@ -72,9 +76,20 @@ func main() {
 		Desc:   "The topic to write the concept annotation to",
 		EnvVar: "PRODUCER_TOPIC",
 	})
+	whitelistRegex := app.String(cli.StringOpt{
+		Name:   "whitelistRegex",
+		Desc:   "The regex to use to filter messages based on Origin-System-Id.",
+		EnvVar: "WHITELIST_REGEX",
+		Value:  "http://cmdb\\.ft\\.com/systems/methode-web-pub",
+	})
 
 	app.Action = func() {
 		var err error
+		whitelist, err = regexp.Compile(*whitelistRegex)
+		if err != nil {
+			logger.Fatal("Please specify a valid whitelist ", err)
+		}
+
 		messageProducer, err = kafka.NewProducer(*brokerAddress, *producerTopic)
 		if err != nil {
 			logger.Fatal("Cannot start message producer", err)
@@ -116,6 +131,11 @@ func enableHealthChecks(messageConsumer kafka.Consumer) {
 
 func handleMessage(msg kafka.FTMessage) error {
 	tid := msg.Headers["X-Request-Id"]
+	systemCode := msg.Headers["Origin-System-Id"]
+	if !whitelist.MatchString(systemCode) {
+		logger.Info(fmt.Sprintf("Skipping annotations published with Origin-System-Id \"%v\". It does not match the configured whitelist.", systemCode), tid, "-")
+		return nil
+	}
 
 	var metadataPublishEvent MetadataPublishEvent
 	err := json.Unmarshal([]byte(msg.Body), &metadataPublishEvent)
