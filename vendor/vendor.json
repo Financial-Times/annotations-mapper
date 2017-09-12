@@ -52,6 +52,12 @@
 		{
 			"checksumSHA1": "VLLpfioPkGDIhtY86DHsZaCPXQo=",
 			"path": "github.com/Sirupsen/logrus/hooks/test",
+			"revision": "5e5dc898656f695e2a086b8e12559febbfc01562",
+			"revisionTime": "2017-05-15T10:45:16Z"
+		},
+		{
+			"checksumSHA1": "VLLpfioPkGDIhtY86DHsZaCPXQo=",
+			"path": "github.com/Sirupsen/logrus/hooks/test",
 			"revision": "a62b1531c0b6f08944e96850e76a95a1dd6e8f9b",
 			"revisionTime": "2017-05-25T00:53:41Z"
 		},
