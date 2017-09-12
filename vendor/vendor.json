@@ -11,18 +11,16 @@
 			"versionExact": "0.3.0"
 		},
 		{
+			"checksumSHA1": "d6isi10Jfk7YMltYxVNgQ68MYSQ=",
+			"path": "github.com/Financial-Times/go-logger",
+			"revision": "8847817bc6f87aa25c2e3e0e90f39ccaafcc00d4",
+			"revisionTime": "2017-08-25T09:01:56Z"
+		},
+		{
 			"checksumSHA1": "efJSs//9AHdDmQklerOPAYoae40=",
 			"path": "github.com/Financial-Times/kafka-client-go/kafka",
 			"revision": "9b51d3f2fa101211984b96ecf73f045afb38e29c",
 			"revisionTime": "2017-06-20T08:33:10Z"
-		},
-		{
-			"checksumSHA1": "mirNgwWRdRte0ku/g4u4fNbzQP0=",
-			"path": "github.com/Financial-Times/message-queue-gonsumer/consumer",
-			"revision": "6f96a5cb1e34c4baa8bc64f56524a7f2e0092ed3",
-			"revisionTime": "2017-06-22T11:17:49Z",
-			"version": "0.4.0",
-			"versionExact": "0.4.0"
 		},
 		{
 			"checksumSHA1": "fpmb1rRyi/c4byRjNhsHaUppDg0=",
@@ -46,16 +44,22 @@
 			"revisionTime": "2017-06-15T15:11:31Z"
 		},
 		{
-			"checksumSHA1": "DYv6Q1+VfnUVxMwvk5IshAClLvw=",
+			"checksumSHA1": "cT6+XPBZiXsFbb7cXT6AYNrZyuM=",
 			"path": "github.com/Sirupsen/logrus",
-			"revision": "5e5dc898656f695e2a086b8e12559febbfc01562",
-			"revisionTime": "2017-05-15T10:45:16Z"
+			"revision": "3f603f494d61c73457fb234161d8982b9f0f0b71",
+			"revisionTime": "2017-02-07T18:34:08Z"
 		},
 		{
 			"checksumSHA1": "VLLpfioPkGDIhtY86DHsZaCPXQo=",
 			"path": "github.com/Sirupsen/logrus/hooks/test",
 			"revision": "5e5dc898656f695e2a086b8e12559febbfc01562",
 			"revisionTime": "2017-05-15T10:45:16Z"
+		},
+		{
+			"checksumSHA1": "VLLpfioPkGDIhtY86DHsZaCPXQo=",
+			"path": "github.com/Sirupsen/logrus/hooks/test",
+			"revision": "a62b1531c0b6f08944e96850e76a95a1dd6e8f9b",
+			"revisionTime": "2017-05-25T00:53:41Z"
 		},
 		{
 			"checksumSHA1": "OFu4xJEIjiI8Suu+j/gabfp+y6Q=",

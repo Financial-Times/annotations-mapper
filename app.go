@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"regexp"
@@ -12,8 +12,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"net/http"
-
+	"github.com/Financial-Times/go-logger"
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
@@ -21,18 +20,24 @@ import (
 	"github.com/twinj/uuid"
 )
 
-const messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
+const (
+	messageTimestampDateFormat = "2006-01-02T15:04:05.000Z"
+	serviceName                = "annotations-mapper"
+	contentType                = "Annotations"
+	consumerStartedEvent       = "consume_queue"
+	producerStartedEvent       = "produce_queue"
+	mapperEvent                = "Map"
+)
 
 var (
 	messageConsumer  kafka.Consumer
 	messageProducer  kafka.Producer
-	logger           *AppLogger
 	taxonomyHandlers map[string]TaxonomyService
 	whitelist        *regexp.Regexp
 )
 
 func init() {
-	logger = NewAppLogger()
+	logger.InitDefaultLogger(serviceName)
 	taxonomyHandlers = map[string]TaxonomyService{
 		"subjects":         SubjectService{HandledTaxonomy: "subjects"},
 		"sections":         SectionService{HandledTaxonomy: "sections"},
@@ -49,7 +54,7 @@ func init() {
 }
 
 func main() {
-	app := cli.App("annotations-mapper", "A service to read V1 metadata publish event, filter it and output UPP-specific metadata to the destination queue.")
+	app := cli.App(serviceName, "A service to read V1 metadata publish event, filter it and output UPP-specific metadata to the destination queue.")
 	zookeeperAddress := app.String(cli.StringOpt{
 		Name:   "zookeeperAddress",
 		Value:  "localhost:2181",
@@ -87,26 +92,25 @@ func main() {
 		var err error
 		whitelist, err = regexp.Compile(*whitelistRegex)
 		if err != nil {
-			logger.Fatal("Please specify a valid whitelist ", err)
+			logger.Fatalf(nil, err, "Please specify a valid whitelist")
 		}
 
 		messageProducer, err = kafka.NewProducer(*brokerAddress, *producerTopic)
 		if err != nil {
-			logger.Fatal("Cannot start message producer", err)
+			logger.Fatalf(nil, err, "Cannot start message producer")
 		}
-		logger.QueueProducerStarted(*producerTopic)
+		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue consumer: %v", *producerTopic)
 
 		messageConsumer, err = kafka.NewConsumer(*zookeeperAddress, *consumerGroup, []string{*consumerTopic}, kafka.DefaultConsumerConfig())
 		if err != nil {
-			logger.Fatal("Cannot start message consumer", err)
+			logger.Fatalf(nil, err, "Cannot start message consumer")
 		}
-		logger.QueueConsumerStarted(*consumerTopic)
+		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue producer: %s", *consumerTopic)
 		messageConsumer.StartListening(handleMessage)
 
 		go enableHealthChecks(messageConsumer)
 
 		waitForSignal()
-		logger.Info("Shutting down Kafka consumer", "", "")
 		messageConsumer.Shutdown()
 	}
 
@@ -125,7 +129,7 @@ func enableHealthChecks(messageConsumer kafka.Consumer) {
 	http.Handle("/", router)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
-		logger.Fatal("Couldn't set up HTTP listener", err)
+		logger.Fatalf(nil, err, "Couldn't set up HTTP listener")
 	}
 }
 
@@ -133,35 +137,51 @@ func handleMessage(msg kafka.FTMessage) error {
 	tid := msg.Headers["X-Request-Id"]
 	systemCode := msg.Headers["Origin-System-Id"]
 	if !whitelist.MatchString(systemCode) {
-		logger.Info(fmt.Sprintf("Skipping annotations published with Origin-System-Id \"%v\". It does not match the configured whitelist.", systemCode), tid, "-")
+		logger.NewEntry(tid).Infof("Skipping annotations published with Origin-System-Id \"%v\". It does not match the configured whitelist.", systemCode)
 		return nil
 	}
+
+	// There is no proper validation in place for annotations. Everything that is parsable will be considered as being valid, everything that is not as being invalid.
+	// This behaviour can be changed when a proper validation will be introduced.
+
+	// Consider the message as invalid - logging all the error messages for this transaction as monitoring events
+	msgIsValid := false
 
 	var metadataPublishEvent MetadataPublishEvent
 	err := json.Unmarshal([]byte(msg.Body), &metadataPublishEvent)
 	if err != nil {
-		logger.Error("Cannot unmarshal message body", tid, "", err)
+		logger.NewMonitoringEntry(mapperEvent, tid, contentType).WithValidFlag(msgIsValid).WithError(err).Error("Cannot unmarshal message body")
 		return err
 	}
 
-	logger.Info("Processing metadata publish event", tid, metadataPublishEvent.UUID)
+	logger.NewEntry(tid).WithUUID(metadataPublishEvent.UUID).Info("Processing metadata publish event")
 
 	metadataXML, err := base64.StdEncoding.DecodeString(metadataPublishEvent.Value)
 	if err != nil {
-		logger.Error("Error decoding body", tid, metadataPublishEvent.UUID, err)
+		logger.NewMonitoringEntry(mapperEvent, tid, contentType).WithValidFlag(msgIsValid).WithUUID(metadataPublishEvent.UUID).WithError(err).Error("Error decoding body")
 		return err
 	}
 
 	metadata, err, hadInvalidChars := unmarshalMetadata(metadataXML)
-
 	if err != nil {
-		logger.Error("Error unmarshalling metadata XML", tid, metadataPublishEvent.UUID, err)
+		errMsg := "Error unmarshalling metadata XML"
 		if hadInvalidChars {
-			logger.Info("Metadata XML had invalid UTF8 characters.", tid, metadataPublishEvent.UUID)
+			logger.NewEntry(tid).WithUUID(metadataPublishEvent.UUID).WithError(err).Errorf("%s Metadata XML had invalid UTF8 characters.", errMsg)
+		} else {
+			logger.NewEntry(tid).WithUUID(metadataPublishEvent.UUID).WithError(err).Errorf("%s", errMsg)
 		}
+
+		// Log validation error as a monitoring event
+		entry := logger.NewMonitoringEntry(mapperEvent, tid, contentType).WithValidFlag(msgIsValid)
+		if metadataPublishEvent.UUID != "" {
+			entry = entry.WithUUID(metadataPublishEvent.UUID)
+		}
+		entry.WithError(err).Error("Message is not valid due to parsing issues. ")
 		return err
 	}
 
+	// if the message had no parsing errors: consider it as valid
+	msgIsValid = true
 	annotations := []annotation{}
 	for _, value := range taxonomyHandlers {
 		annotations = append(annotations, value.buildAnnotations(metadata)...)
@@ -171,7 +191,7 @@ func handleMessage(msg kafka.FTMessage) error {
 
 	marshalledAnnotations, err := json.Marshal(conceptAnnotations)
 	if err != nil {
-		logger.Error("Error marshalling the concept annotations", tid, metadataPublishEvent.UUID, err)
+		logger.NewMonitoringEntry(mapperEvent, tid, contentType).WithUUID(metadataPublishEvent.UUID).WithValidFlag(msgIsValid).WithError(err).Error("Error marshalling concept annotations")
 		return err
 	}
 
@@ -179,10 +199,12 @@ func handleMessage(msg kafka.FTMessage) error {
 	message := kafka.FTMessage{Headers: headers, Body: string(marshalledAnnotations)}
 	err = messageProducer.SendMessage(message)
 	if err != nil {
-		logger.Error("Error sending concept annotation to queue", tid, metadataPublishEvent.UUID, err)
+		logger.NewMonitoringEntry(mapperEvent, tid, contentType).WithUUID(metadataPublishEvent.UUID).WithValidFlag(msgIsValid).WithError(err).Error("Error sending concept annotations to queue")
 		return err
 	}
-	logger.Info("Sent annotation message to queue", tid, metadataPublishEvent.UUID)
+
+	logger.NewMonitoringEntry(mapperEvent, tid, contentType).WithUUID(metadataPublishEvent.UUID).
+		WithValidFlag(msgIsValid).Info("Successfully mapped")
 	return nil
 }
 
