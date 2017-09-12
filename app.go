@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -138,7 +137,7 @@ func handleMessage(msg kafka.FTMessage) error {
 	tid := msg.Headers["X-Request-Id"]
 	systemCode := msg.Headers["Origin-System-Id"]
 	if !whitelist.MatchString(systemCode) {
-		logger.Infof(nil, fmt.Sprintf("Skipping annotations published with Origin-System-Id \"%v\". It does not match the configured whitelist.", systemCode, tid, "-"))
+		logger.NewEntry(tid).Infof("Skipping annotations published with Origin-System-Id \"%v\". It does not match the configured whitelist.", systemCode)
 		return nil
 	}
 
