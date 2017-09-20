@@ -95,7 +95,7 @@ func main() {
 			logger.Fatalf(nil, err, "Please specify a valid whitelist")
 		}
 
-		messageProducer, err = kafka.NewProducer(*brokerAddress, *producerTopic)
+		messageProducer, err = kafka.NewProducer(*brokerAddress, *producerTopic, kafka.DefaultProducerConfig())
 		if err != nil {
 			logger.Fatalf(nil, err, "Cannot start message producer")
 		}
