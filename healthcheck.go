@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	fthealth "github.com/Financial-Times/go-fthealth/v1_1"
 	"github.com/Financial-Times/kafka-client-go/kafka"
@@ -19,11 +20,14 @@ func NewHealthCheck(c kafka.Consumer) *HealthCheck {
 }
 
 func (h *HealthCheck) Health() func(w http.ResponseWriter, r *http.Request) {
-	hc := fthealth.HealthCheck{
-		SystemCode:  "annotations-mapper",
-		Name:        "annotations-mapper",
-		Description: "Checks if all the dependent services are reachable and healthy.",
-		Checks:      []fthealth.Check{h.readQueueCheck()},
+	hc := fthealth.TimedHealthCheck{
+		HealthCheck: fthealth.HealthCheck{
+			SystemCode:  "annotations-mapper",
+			Name:        "annotations-mapper",
+			Description: "Checks if all the dependent services are reachable and healthy.",
+			Checks:      []fthealth.Check{h.readQueueCheck()},
+		},
+		Timeout: 10 * time.Second,
 	}
 	return fthealth.Handler(hc)
 }
