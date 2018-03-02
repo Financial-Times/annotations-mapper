@@ -36,7 +36,7 @@ func (h *HealthCheck) readQueueCheck() fthealth.Check {
 	return fthealth.Check{
 		ID:               "read-message-queue-reachable",
 		Name:             "Read Message Queue Reachable",
-		Severity:         1,
+		Severity:         2,
 		BusinessImpact:   "Content V1 Metadata can't be read from queue. This will negatively impact V1 metadata availability.",
 		TechnicalSummary: "Read message queue is not reachable/healthy",
 		PanicGuide:       "https://dewey.ft.com/annotations-mapper.html",
