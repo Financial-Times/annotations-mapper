@@ -16,8 +16,8 @@
 [[projects]]
   name = "github.com/Financial-Times/kafka-client-go"
   packages = ["kafka"]
-  revision = "de655396819881885c2d4473d900b5e42438bd7a"
-  version = "0.5.0"
+  revision = "5aa30a3275174d54f39f7a197e08015955b6b490"
+  version = "0.8.3"
 
 [[projects]]
   name = "github.com/Financial-Times/service-status-go"
@@ -38,7 +38,8 @@
 [[projects]]
   name = "github.com/Shopify/sarama"
   packages = ["."]
-  revision = "f7e3024a61603647461f4b40bd8f3db88871bf9d"
+  revision = "ec843464b50d4c8b56403ec9d589cf41ea30e722"
+  version = "v1.19.0"
 
 [[projects]]
   name = "github.com/davecgh/go-spew"
@@ -68,6 +69,12 @@
   revision = "553a641470496b2327abcac10b36396bd98e45c9"
 
 [[projects]]
+  name = "github.com/google/uuid"
+  packages = ["."]
+  revision = "9b3b1e0f5f99ae461456d768e7d301a7acdaa2d8"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/gorilla/context"
   packages = ["."]
   revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
@@ -89,6 +96,18 @@
   revision = "8327d12beb75e6471b7f045588acc318d1147146"
 
 [[projects]]
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  revision = "5c8c8bd35d3832f5d134ae1e1e375b69a4d25242"
+  version = "v1.0.1"
+
+[[projects]]
+  name = "github.com/pborman/uuid"
+  packages = ["."]
+  revision = "adf5a7427709b9deb95d29d3fa8a2bf9cfd388f1"
+  version = "v1.2"
+
+[[projects]]
   name = "github.com/pierrec/lz4"
   packages = ["."]
   revision = "5a3d2245f97fc249850e7802e3c01fad02a1c316"
@@ -101,7 +120,8 @@
 [[projects]]
   name = "github.com/pkg/errors"
   packages = ["."]
-  revision = "c605e284fe17294bda444b34710735b29d1a9d90"
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
 
 [[projects]]
   name = "github.com/pmezard/go-difflib"
@@ -125,11 +145,15 @@
     ".",
     "hooks/test"
   ]
-  revision = "89742aefa4b206dcf400792f3bd35b542998eb3b"
+  revision = "bcd833dfe83d3cebad139e4a29ed79cb2318bf95"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/stretchr/testify"
-  packages = ["assert"]
+  packages = [
+    "assert",
+    "require"
+  ]
   revision = "4d4bfba8f1d1027c4fdbe371823030df51419987"
 
 [[projects]]
@@ -170,6 +194,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c83ed5dd7006dac2b42b1f2e36ff72322679d76008c2a3dae85245cc07a5460d"
+  inputs-digest = "f6dd116a4ec22a837417fb413745d22c6dcef89479d38ebad89ce3863c436c75"
   solver-name = "gps-cdcl"
   solver-version = 1
