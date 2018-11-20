@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"strings"
+
 	uuidutils "github.com/Financial-Times/uuid-utils-go"
 	"github.com/stretchr/testify/assert"
-	"strings"
 )
 
 func TestSubjectServiceBuildAnnotations(t *testing.T) {
@@ -249,7 +250,7 @@ func TestOrganisationsServiceBuildAnnotations(t *testing.T) {
 
 	for _, test := range tests {
 		actualConceptAnnotations := service.buildAnnotations(test.contentRef)
-		assert.Equal(test.annotations, actualConceptAnnotations, fmt.Sprintf("%s: Actual concept annotations incorrect: ACTUAL: %s  TEST: %s ", test.name, actualConceptAnnotations, test.annotations))
+		assert.Equal(test.annotations, actualConceptAnnotations, fmt.Sprintf("%s: Actual concept annotations incorrect: ACTUAL: %v  TEST: %v ", test.name, actualConceptAnnotations, test.annotations))
 	}
 }
 
@@ -283,7 +284,7 @@ func TestPeopleServiceBuildAnnotations(t *testing.T) {
 		actualConceptAnnotations := service.buildAnnotations(test.contentRef)
 		assert.Equal(test.annotations,
 			actualConceptAnnotations,
-			fmt.Sprintf("%s: Actual concept annotations incorrect: ACTUAL: %s  TEST: %s ",
+			fmt.Sprintf("%s: Actual concept annotations incorrect: ACTUAL: %v  TEST: %v ",
 				test.name,
 				actualConceptAnnotations,
 				test.annotations))
