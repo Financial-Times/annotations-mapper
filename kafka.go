@@ -13,10 +13,7 @@ import (
 )
 
 func startKafkaConsumer(messageConsumer kafka.Consumer) {
-	for {
-		messageConsumer.StartListening(handleMessage)
-		logger.Warnf(nil, "Kafka message consumer stopped listening, attempting to reconnect")
-	}
+	messageConsumer.StartListening(handleMessage)
 }
 
 func handleMessage(msg kafka.FTMessage) error {
