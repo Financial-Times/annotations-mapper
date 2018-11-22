@@ -13,7 +13,10 @@ import (
 )
 
 func startKafkaConsumer(messageConsumer kafka.Consumer) {
-	messageConsumer.StartListening(handleMessage)
+	for {
+		messageConsumer.Consume(handleMessage)
+		logger.Warnf(nil, "Consumer stopped processing messages, restarting the consumer.")
+	}
 }
 
 func handleMessage(msg kafka.FTMessage) error {

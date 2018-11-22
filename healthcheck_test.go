@@ -26,6 +26,10 @@ func (mc mockKafkaConnection) StartListening(messageHandler func(message kafka.F
 	return
 }
 
+func (mc mockKafkaConnection) Consume(messageHandler func(message kafka.FTMessage) error) {
+	return
+}
+
 func (mc mockKafkaConnection) SendMessage(message kafka.FTMessage) error {
 	return nil
 }
