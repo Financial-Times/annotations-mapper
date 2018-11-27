@@ -35,7 +35,7 @@
 
 [[constraint]]
   name = "github.com/Financial-Times/kafka-client-go"
-  version = "0.9.0-blocking-consume-rc1"
+  version = "0.9.0-blocking-consume-rc3"
 
 [[constraint]]
   name = "github.com/Financial-Times/service-status-go"

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"os/signal"
@@ -92,19 +91,15 @@ func main() {
 		}
 
 		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue consumer: %v", *producerTopic)
-		messageConsumer, _ = kafka.NewPerseverantConsumer(*zookeeperAddress, *consumerGroup, []string{*consumerTopic}, kafka.DefaultConsumerConfig(), time.Minute)
+		messageConsumer, _ = kafka.NewPerseverantConsumer(*zookeeperAddress, *consumerGroup, []string{*consumerTopic}, kafka.DefaultConsumerConfig(), time.Minute, nil)
 
 		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue producer: %s", *consumerTopic)
 		messageProducer, _ = kafka.NewPerseverantProducer(*brokerAddress, *producerTopic, nil, 0, time.Minute)
 
-		ctx, cancel := context.WithCancel(context.Background())
-
-		go startKafkaConsumer(ctx, messageConsumer)
+		go startKafkaConsumer(messageConsumer)
 		go startServer(messageConsumer, messageProducer)
 
 		waitForSignal()
-
-		cancel()
 		messageConsumer.Shutdown()
 	}
 

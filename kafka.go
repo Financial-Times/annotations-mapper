@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
@@ -13,15 +12,8 @@ import (
 	"github.com/twinj/uuid"
 )
 
-func startKafkaConsumer(ctx context.Context, messageConsumer kafka.Consumer) {
-	for {
-		if ctx.Err() != nil {
-			break
-		}
-
-		messageConsumer.Consume(handleMessage)
-		logger.Warnf(nil, "Consumer stopped processing messages, restarting the consumer.")
-	}
+func startKafkaConsumer(messageConsumer kafka.Consumer) {
+	messageConsumer.Consume(handleMessage)
 }
 
 func handleMessage(msg kafka.FTMessage) error {
