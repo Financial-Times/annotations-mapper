@@ -1,20 +1,25 @@
 [![Circle CI](https://circleci.com/gh/Financial-Times/annotations-mapper.svg?style=shield)](https://circleci.com/gh/Financial-Times/annotations-mapper)[![Go Report Card](https://goreportcard.com/badge/github.com/Financial-Times/annotations-mapper)](https://goreportcard.com/report/github.com/Financial-Times/annotations-mapper) [![Coverage Status](https://coveralls.io/repos/github/Financial-Times/annotations-mapper/badge.svg)](https://coveralls.io/github/Financial-Times/annotations-mapper)
 
-# annotations-mapper
+# Annotations Mapper
+
 Processes metadata about content that comes from QMI system - aka V1 metadata.  
 
 * Reads V1 metadata for an article from the  kafka source topic _NativeCmsMetadataPublicationEvents_
 * Filters and transforms it to UP standard json representation
 * Puts the result onto the kafka destination topic _ConceptAnnotations_
 
+## Prerequisites
+
+* Go Dep
+* Kafka + Zookeeper - either locally or installed in an external cluster
+
 ## Installation
 
 ```
-go get -u github.com/kardianos/govendor
 go get -u github.com/Financial-Times/annotations-mapper
 cd $GOPATH/src/github.com/Financial-Times/annotations-mapper
-govendor sync
-go build .
+dep ensure -vendor-only
+go build
 ```
 
 ## Startup parameters
@@ -23,22 +28,21 @@ You can find the necessary startup parameters by running:
 ./annotations-mapper --help
 ```
 
-
-## Prerequisites
-In order to run annotations-mapper you would need at least kafka and zookeeper to be deployed in the same environment and you would need to provide the host and the port to connect to them as startup parameters.
-
 ## Run locally
-````
-   export|set ZOOKEEPR_ADDRESS=http://kafkahost:9092
-   export|set CONSUMER_GROUP=FooGroup
-   export|set CONSUMER_TOPIC=FooBarEvents
-   export|set BROKER_ADDRESS=http://kafkahost:9092
-   export|set PRODUCER_TOPIC=DestTopic
-````
 
-````
+Set the required environment variables:
+```
+export|set ZOOKEEPR_ADDRESS=http://kafkahost:9092
+export|set CONSUMER_GROUP=FooGroup
+export|set CONSUMER_TOPIC=FooBarEvents
+export|set BROKER_ADDRESS=http://kafkahost:9092
+export|set PRODUCER_TOPIC=DestTopic
+```
+
+And run the binary.
+```
 ./annotations-mapper[.exe]
-````
+```
 
 ## Build in Docker
 ````
@@ -47,7 +51,7 @@ docker build -t coco/annotations-mapper:$DOCKER_APP_VERSION .
 git config remote.origin.url git@github.com:Financial-Times/annotations-mapper.git
 ````
 
-# #Run in Docker
+## Run in Docker
 ````
 docker run --name annotations-mapper -p 8080 \
 	--env "ZOOKEEPER_ADDRESS=http://zookeper:9092" \
@@ -57,7 +61,7 @@ docker run --name annotations-mapper -p 8080 \
 	--env "PRODUCER_TOPIC=ConceptAnnotations" \
 	coco/annotations-mapper:$DOCKER_APP_VERSION
 ````
- 
+
 ## Admin Endpoints
 |Endpoint     | Explanation |
 |---|---|
@@ -65,7 +69,7 @@ docker run --name annotations-mapper -p 8080 \
 |/__ping         | _response status_: **200**  _body_:**"pong"** |
 |/ping           | the same as above for compatibility with Dropwizard java apps |
 |/__gtg          | _response status_: **200** when "good to go" or **503** when not "good to go"|
-|/__build-info   | consisting of _**version** (release tag), git **repository** url, **revision** (git commit-id), deployment **datetime**, **builder** (go or java or ...)_ 
+|/__build-info   | consisting of _**version** (release tag), git **repository** url, **revision** (git commit-id), deployment **datetime**, **builder** (go or java or ...)_
 |/build-info     | the same as above for compatibility with Dropwizard java apps |
 
 
@@ -84,20 +88,20 @@ X-Request-Id: tid_9rvfuynl4b
 **Decoded Message-In body**
 ````
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>  
-<ns5:contentRef ns5:created="2016-12-29T14:54:10.000Z" ns5:id="3505101" 
-	xmlns:ns14="http://metadata.internal.ft.com/metadata/xsd/metadata_concept_v1.0.xsd" 
-	xmlns:ns9="http://metadata.internal.ft.com/metadata/xsd/metadata_taxonomy_v1.0.xsd" 
-	xmlns:ns5="http://metadata.internal.ft.com/metadata/xsd/metadata_content_reference_v1.0.xsd" 
-	xmlns:ns12="http://metadata.internal.ft.com/metadata/xsd/metadata_notification_v1.0.xsd" 
-	xmlns:ns13="http://metadata.internal.ft.com/metadata/xsd/metadata_search_v1.0.xsd" 
-	xmlns:ns6="http://metadata.internal.ft.com/metadata/xsd/metadata_tag_v1.0.xsd" 
-	xmlns:ns7="http://metadata.internal.ft.com/metadata/xsd/metadata_binding_v1.0.xsd" 
-	xmlns:ns10="http://metadata.internal.ft.com/metadata/xsd/metadata_suggestion_v1.0.xsd" 
-	xmlns:ns8="http://metadata.internal.ft.com/metadata/xsd/metadata_property_v1.0.xsd" 
-	xmlns:ns11="http://metadata.internal.ft.com/metadata/xsd/metadata_count_response_v1.0.xsd" 
-	xmlns:ns2="http://metadata.internal.ft.com/metadata/xsd/metadata_party_v1.0.xsd" 
-	xmlns:ns1="http://metadata.internal.ft.com/metadata/xsd/metadata_base_v1.0.xsd" 
-	xmlns:ns4="http://metadata.internal.ft.com/metadata/xsd/metadata_term_v1.0.xsd" 
+<ns5:contentRef ns5:created="2016-12-29T14:54:10.000Z" ns5:id="3505101"
+	xmlns:ns14="http://metadata.internal.ft.com/metadata/xsd/metadata_concept_v1.0.xsd"
+	xmlns:ns9="http://metadata.internal.ft.com/metadata/xsd/metadata_taxonomy_v1.0.xsd"
+	xmlns:ns5="http://metadata.internal.ft.com/metadata/xsd/metadata_content_reference_v1.0.xsd"
+	xmlns:ns12="http://metadata.internal.ft.com/metadata/xsd/metadata_notification_v1.0.xsd"
+	xmlns:ns13="http://metadata.internal.ft.com/metadata/xsd/metadata_search_v1.0.xsd"
+	xmlns:ns6="http://metadata.internal.ft.com/metadata/xsd/metadata_tag_v1.0.xsd"
+	xmlns:ns7="http://metadata.internal.ft.com/metadata/xsd/metadata_binding_v1.0.xsd"
+	xmlns:ns10="http://metadata.internal.ft.com/metadata/xsd/metadata_suggestion_v1.0.xsd"
+	xmlns:ns8="http://metadata.internal.ft.com/metadata/xsd/metadata_property_v1.0.xsd"
+	xmlns:ns11="http://metadata.internal.ft.com/metadata/xsd/metadata_count_response_v1.0.xsd"
+	xmlns:ns2="http://metadata.internal.ft.com/metadata/xsd/metadata_party_v1.0.xsd"
+	xmlns:ns1="http://metadata.internal.ft.com/metadata/xsd/metadata_base_v1.0.xsd"
+	xmlns:ns4="http://metadata.internal.ft.com/metadata/xsd/metadata_term_v1.0.xsd"
 	xmlns:ns3="http://metadata.internal.ft.com/metadata/xsd/metadata_lifecycle_v1.0.xsd">  
 	<ns5:primarySection ns4:status="ACTIVE" ns4:externalTermId="116" ns4:taxonomy="Sections" ns1:id="MTE2-U2VjdGlvbnM=">  
 	<ns4:canonicalName>  

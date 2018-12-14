@@ -16,14 +16,14 @@
 [[projects]]
   name = "github.com/Financial-Times/kafka"
   packages = ["consumergroup"]
-  revision = "928fd8736b844d2915f9b62b784ebcc824564146"
-  version = "1.0.1-contexts-rc2"
+  revision = "fddecb2b8f89d4088fd2b1296194933cfed68d73"
+  version = "1.0.1"
 
 [[projects]]
   name = "github.com/Financial-Times/kafka-client-go"
   packages = ["kafka"]
-  revision = "c52d85a3e6cc9cc9052fc5910269f484f1501363"
-  version = "0.9.0-blocking-consume-rc4"
+  revision = "c3a1941e42a49ea0be05a6d2570886fb70217a69"
+  version = "0.9.0"
 
 [[projects]]
   name = "github.com/Financial-Times/service-status-go"
@@ -201,6 +201,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "95c06c7aa27154b729d4f4efb8b66a08c796ab9ec44ba7cf7f8a07e72919b3ba"
+  inputs-digest = "7409d646814ab647a5350f0b8eac2dbff6551c9b066853a49e17a1423a7fd8d1"
   solver-name = "gps-cdcl"
   solver-version = 1
