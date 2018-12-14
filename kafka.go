@@ -13,7 +13,7 @@ import (
 )
 
 func startKafkaConsumer(messageConsumer kafka.Consumer) {
-	messageConsumer.Consume(handleMessage)
+	messageConsumer.StartListening(handleMessage)
 }
 
 func handleMessage(msg kafka.FTMessage) error {
