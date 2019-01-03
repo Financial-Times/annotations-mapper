@@ -1,22 +1,22 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: {{ .Values.service.name }} 
+  name: {{ .Values.service.name }}
   labels:
     chart: "{{ .Chart.Name | trunc 63 }}"
-    chartVersion: "{{ .Chart.Version | trunc 63 }}" 
-    visualize: "true" 
-    app: {{ .Values.service.name }} 
+    chartVersion: "{{ .Chart.Version | trunc 63 }}"
+    visualize: "true"
+    app: {{ .Values.service.name }}
 spec:
-  replicas: {{ .Values.replicaCount }} 
-  selector: 
+  replicas: {{ .Values.replicaCount }}
+  selector:
     matchLabels:
       app: {{ .Values.service.name }}
   template:
     metadata:
       labels:
         app: {{ .Values.service.name }}
-        visualize: "true" 
+        visualize: "true"
     spec:
       affinity:
         podAntiAffinity:
@@ -28,38 +28,39 @@ spec:
                 values:
                 - {{ .Values.service.name }}
             topologyKey: "kubernetes.io/hostname"
-      containers: 
-      - name: {{ .Values.service.name }} 
+      containers:
+      - name: {{ .Values.service.name }}
         image: "{{ .Values.image.repository }}:{{ .Chart.Version }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        env: 
-        - name: CONSUMER_GROUP 
-          value: {{ .Values.env.CONSUMER_GROUP }} 
-        - name: CONSUMER_TOPIC 
-          value: {{ .Values.env.CONSUMER_TOPIC }} 
-        - name: PRODUCER_TOPIC 
-          value: {{ .Values.env.PRODUCER_TOPIC }} 
-        - name: ZOOKEEPER_ADDRESS 
-          valueFrom: 
-            configMapKeyRef: 
-              name: global-config 
+        env:
+        - name: CONSUMER_GROUP
+          value: {{ .Values.env.CONSUMER_GROUP }}
+        - name: CONSUMER_TOPIC
+          value: {{ .Values.env.CONSUMER_TOPIC }}
+        - name: PRODUCER_TOPIC
+          value: {{ .Values.env.PRODUCER_TOPIC }}
+        - name: ZOOKEEPER_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: global-config
               key: zookeeper.url
-        - name: BROKER_ADDRESS 
-          valueFrom: 
-            configMapKeyRef: 
-              name: global-config 
+        - name: BROKER_ADDRESS
+          valueFrom:
+            configMapKeyRef:
+              name: global-config
               key: kafka.url
-        ports: 
-        - containerPort: 8080 
-        livenessProbe: 
-          tcpSocket: 
-            port: 8080 
-          initialDelaySeconds: 10 
-        readinessProbe: 
-          httpGet: 
-            path: "/__gtg" 
-            port: 8080 
-          initialDelaySeconds: 15 
-          periodSeconds: 30 
-        resources: 
+        ports:
+        - containerPort: 8080
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 10
+        readinessProbe:
+          httpGet:
+            path: "/__gtg"
+            port: 8080
+          initialDelaySeconds: 15
+          timeoutSeconds: 10
+          periodSeconds: 30
+        resources:
 {{ toYaml .Values.resources | indent 12 }}
