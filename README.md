@@ -6,7 +6,7 @@ Processes metadata about content that comes from the QMI system - aka V1 metadat
 
 * Reads V1 metadata for an article from the Kafka source topic _NativeCmsMetadataPublicationEvents_
 * Filters and transforms it to UPP standard JSON representation
-* Puts the result onto the Lafka destination topic _ConceptAnnotations_
+* Puts the result onto the Kafka destination topic _ConceptAnnotations_
 
 ## Prerequisites
 
@@ -15,7 +15,7 @@ Processes metadata about content that comes from the QMI system - aka V1 metadat
 ## Installation
 
 ```
-go get 	github.com/Financial-Times/annotations-mapper
+go get github.com/Financial-Times/annotations-mapper
 cd $GOPATH/src/github.com/Financial-Times/annotations-mapper
 go build
 ```
@@ -30,14 +30,14 @@ You can find the necessary startup parameters by running:
 
 Set the required environment variables:
 ```
-export|set ZOOKEEPR_ADDRESS=http://kafkahost:9092
-export|set CONSUMER_GROUP=FooGroup
-export|set CONSUMER_TOPIC=FooBarEvents
-export|set BROKER_ADDRESS=http://kafkahost:9092
-export|set PRODUCER_TOPIC=DestTopic
+export|set ZOOKEEPER_ADDRESS=localhost:2181
+export|set CONSUMER_GROUP=annotations-mapper
+export|set CONSUMER_TOPIC= NativeCmsMetadataPublicationEvents
+export|set BROKER_ADDRESS=localhost:9092
+export|set PRODUCER_TOPIC=ConceptAnnotations
 ```
 
-And run the binary.
+And run the binary:
 ```
 ./annotations-mapper[.exe]
 ```
