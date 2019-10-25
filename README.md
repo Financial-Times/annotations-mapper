@@ -2,23 +2,21 @@
 
 # Annotations Mapper
 
-Processes metadata about content that comes from QMI system - aka V1 metadata.  
+Processes metadata about content that comes from the QMI system - aka V1 metadata.  
 
-* Reads V1 metadata for an article from the  kafka source topic _NativeCmsMetadataPublicationEvents_
-* Filters and transforms it to UP standard json representation
-* Puts the result onto the kafka destination topic _ConceptAnnotations_
+* Reads V1 metadata for an article from the Kafka source topic _NativeCmsMetadataPublicationEvents_
+* Filters and transforms it to UPP standard JSON representation
+* Puts the result onto the Lafka destination topic _ConceptAnnotations_
 
 ## Prerequisites
 
-* Go Dep
 * Kafka + Zookeeper - either locally or installed in an external cluster
 
 ## Installation
 
 ```
-go get -u github.com/Financial-Times/annotations-mapper
+go get 	github.com/Financial-Times/annotations-mapper
 cd $GOPATH/src/github.com/Financial-Times/annotations-mapper
-dep ensure -vendor-only
 go build
 ```
 
@@ -65,12 +63,12 @@ docker run --name annotations-mapper -p 8080 \
 ## Admin Endpoints
 |Endpoint     | Explanation |
 |---|---|
-| /__health      | checks that annotations-mapper can communicate to kafka|
+| /__health      | Checks that annotations-mapper can communicate to Kafka|
 |/__ping         | _response status_: **200**  _body_:**"pong"** |
-|/ping           | the same as above for compatibility with Dropwizard java apps |
+|/ping           | The same as above for compatibility with Dropwizard Java apps |
 |/__gtg          | _response status_: **200** when "good to go" or **503** when not "good to go"|
 |/__build-info   | consisting of _**version** (release tag), git **repository** url, **revision** (git commit-id), deployment **datetime**, **builder** (go or java or ...)_
-|/build-info     | the same as above for compatibility with Dropwizard java apps |
+|/build-info     | The same as above for compatibility with Dropwizard Java apps |
 
 
 ## Example Message-In
