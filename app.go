@@ -12,7 +12,7 @@ import (
 	"github.com/Financial-Times/kafka-client-go/kafka"
 	status "github.com/Financial-Times/service-status-go/httphandlers"
 	"github.com/gorilla/mux"
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 )
 
 const (
@@ -123,7 +123,7 @@ func startServer(messageConsumer kafka.Consumer, messageProducer kafka.Producer)
 }
 
 func waitForSignal() {
-	ch := make(chan os.Signal)
+	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
 }
