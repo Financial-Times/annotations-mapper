@@ -41,7 +41,7 @@ func (h *HealthCheck) kafkaConsumerCheck() fthealth.Check {
 		Severity:         2,
 		BusinessImpact:   "Content V1 Metadata can't be read from queue. This will negatively impact V1 metadata availability.",
 		TechnicalSummary: "Read message queue is not reachable/healthy",
-		PanicGuide:       "https://dewey.ft.com/annotations-mapper.html",
+		PanicGuide:       "https://runbooks.in.ft.com/annotations-mapper",
 		Checker:          h.checkKafkaConsumerConnectivity,
 	}
 }
@@ -53,7 +53,7 @@ func (h *HealthCheck) kafkaProducerCheck() fthealth.Check {
 		Severity:         2,
 		BusinessImpact:   "Content V1 Metadata can't be written to the queue. This will negatively impact V1 metadata availability.",
 		TechnicalSummary: "This will cause map failures as messages will not be produced to the next queue after being mapped.",
-		PanicGuide:       "https://dewey.ft.com/annotations-mapper.html",
+		PanicGuide:       "https://runbooks.in.ft.com/annotations-mapper",
 		Checker:          h.checkKafkaProducerConnectivity,
 	}
 }
