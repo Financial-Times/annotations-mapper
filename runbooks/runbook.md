@@ -51,6 +51,11 @@ No
 
 No
 
+## Dependencies
+
+- upp-kafka
+- upp-zookeeper
+
 ## Failover Architecture Type
 
 ActiveActive
