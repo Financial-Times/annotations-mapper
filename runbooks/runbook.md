@@ -1,6 +1,6 @@
 # UPP - Annotations Mapper
 
-Annotations Mapper reads all QMI native metadata messages from the `NativeCmsMetadataPublicationEvents` queue and maps them to a JSON message, which is forwarded to the `ConceptAnnotations` queue.
+Annotations Mapper processes metadata about content that comes from the QMI system (v1 metadata).
 
 ## Code
 
@@ -8,7 +8,7 @@ annotations-mapper
 
 ## Primary URL
 
-<https://github.com/Financial-Times/annotations-mapper>
+https://upp-prod-delivery-glb.upp.ft.com/__annotations-mapper/
 
 ## Service Tier
 
@@ -34,10 +34,6 @@ content
 - ivan.nikolov
 - miroslav.gatsanoga
 - marina.chompalova
-- hristo.georgiev
-- donislav.belev
-- mihail.mihaylov
-- boyko.boykov
 
 ## Host Platform
 
@@ -45,7 +41,7 @@ AWS
 
 ## Architecture
 
-None provided
+Annotations Mapper reads all QMI native metadata messages from the `NativeCmsMetadataPublicationEvents` Kafka queue and maps them to a JSON message, which is forwarded to the `ConceptAnnotations` queue.
 
 ## Contains Personal Data
 
@@ -61,15 +57,15 @@ ActiveActive
 
 ## Failover Process Type
 
-NotApplicable
+FullyAutomated
 
 ## Failback Process Type
 
-NotApplicable
+FullyAutomated
 
 ## Failover Details
 
-NotApplicable
+The service is deployed in both Delivery clusters. The failover guide for the cluster is located here: https://github.com/Financial-Times/upp-docs/tree/master/failover-guides/delivery-cluster.
 
 ## Data Recovery Process Type
 
@@ -77,7 +73,7 @@ NotApplicable
 
 ## Data Recovery Details
 
-NotApplicable
+The service does not store data, so it does not require any data recovery steps.
 
 ## Release Process Type
 
@@ -101,7 +97,10 @@ There is no key rotation procedure for this system.
 
 ## Monitoring
 
-N/A
+Service in UPP K8S delivery clusters:
+
+* Delivery-Prod-EU health: https://upp-prod-delivery-eu.upp.ft.com/__health/__pods-health?service-name=annotations-mapper
+* Delivery-Prod-US health: https://upp-prod-delivery-us.upp.ft.com/__health/__pods-health?service-name=annotations-mapper
 
 ## First Line Troubleshooting
 
