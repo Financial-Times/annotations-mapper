@@ -2,7 +2,6 @@
 replicaCount: 2
 service:
   name: annotations-mapper
-eksCluster: true
 env:
   CONSUMER_GROUP: annotations-mapper
   CONSUMER_TOPIC: NativeCmsMetadataPublicationEvents
