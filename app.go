@@ -91,10 +91,10 @@ func main() {
 		}
 
 		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue consumer: %v", *producerTopic)
-		messageConsumer, _ = kafka.NewPerseverantConsumer(*zookeeperAddress, *consumerGroup, []string{*consumerTopic}, kafka.DefaultConsumerConfig(), time.Minute, nil)
+		messageConsumer, _ = kafka.NewPerseverantConsumer(*zookeeperAddress, *consumerGroup, []string{*consumerTopic}, kafka.DefaultConsumerConfig(), time.Minute, nil, nil)
 
 		logger.Infof(map[string]interface{}{"event": consumerStartedEvent}, "Starting queue producer: %s", *consumerTopic)
-		messageProducer, _ = kafka.NewPerseverantProducer(*brokerAddress, *producerTopic, nil, 0, time.Minute)
+		messageProducer, _ = kafka.NewPerseverantProducer(*brokerAddress, *producerTopic, nil, 0, time.Minute, nil)
 
 		go startKafkaConsumer(messageConsumer)
 		go startServer(messageConsumer, messageProducer)
