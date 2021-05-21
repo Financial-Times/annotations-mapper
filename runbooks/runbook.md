@@ -20,7 +20,7 @@ Platinum
 
 ## Lifecycle Stage
 
-Production
+Decommissioned
 
 ## Host Platform
 
